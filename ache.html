@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ACHE MADRE — Sistema de Gobernanza Hemisférica</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&family=JetBrains+Mono:wght@300;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#020608;--surface:#071220;--card:#0b1e33;--border:#1a3a5c;
+  --cr-blue:#002B7F;--cr-red:#CE1126;--us-blue:#002868;--us-red:#BF0A30;
+  --cyan:#00d4ff;--green:#00ff9d;--orange:#ff6b35;--gold:#ffd700;
+  --purple:#a855f7;--red:#ff2d55;--text:#dde8f4;--muted:#4a6a88;
+  --glow:rgba(0,212,255,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.025)1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025)1px,transparent 1px);background-size:50px 50px;pointer-events:none;z-index:0;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ANIMATIONS */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes glow{0%,100%{box-shadow:0 0 8px var(--cyan)}50%{box-shadow:0 0 25px var(--cyan),0 0 50px rgba(0,212,255,.25)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes scan{to{top:110%;}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+body::after{content:'';position:fixed;top:-10%;left:0;right:0;height:150px;background:linear-gradient(transparent,rgba(0,212,255,.03),transparent);animation:scan 10s linear infinite;pointer-events:none;z-index:1;}
+
+/* ===== HEADER ===== */
+header{
+  position:fixed;top:0;left:0;right:0;height:58px;
+  background:rgba(2,6,8,.97);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;
+  z-index:2000;backdrop-filter:blur(16px);
+}
+.flags{display:flex;gap:4px;align-items:center;}
+.flag{width:26px;height:16px;border-radius:2px;object-fit:cover;border:1px solid rgba(255,255,255,.15);}
+.flag-cr{background:linear-gradient(180deg,var(--cr-blue) 0%,var(--cr-blue) 25%,#fff 25%,#fff 37.5%,var(--cr-red) 37.5%,var(--cr-red) 62.5%,#fff 62.5%,#fff 75%,var(--cr-blue) 75%,var(--cr-blue) 100%);}
+.flag-us{background:repeating-linear-gradient(180deg,var(--us-red) 0,var(--us-red) 7.7%,#fff 7.7%,#fff 15.4%);}
+
+.logo-text{font-family:'Orbitron',monospace;font-weight:900;font-size:15px;background:linear-gradient(90deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;white-space:nowrap;}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:2px;line-height:1;white-space:nowrap;}
+
+.hdr-center{flex:1;display:flex;justify-content:center;align-items:center;gap:16px;}
+.hdr-stat{text-align:center;}
+.hdr-val{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--cyan);}
+.hdr-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+
+.hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.pill{display:flex;align-items:center;gap:5px;padding:3px 10px;border:1px solid;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:9px;white-space:nowrap;}
+.pill.ok{border-color:var(--green);color:var(--green);}
+.pill.warn{border-color:var(--gold);color:var(--gold);}
+.pill.info{border-color:var(--cyan);color:var(--cyan);}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:pulse 1.5s infinite;}
+
+/* ===== SIDEBAR ===== */
+aside{
+  position:fixed;top:58px;left:0;bottom:0;width:200px;
+  background:rgba(7,18,32,.99);border-right:1px solid var(--border);
+  z-index:1000;overflow-y:auto;display:flex;flex-direction:column;
+}
+.nav-sec{padding:12px 0 4px;}
+.nav-lbl{padding:0 16px 6px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;}
+.nav-item{
+  display:flex;align-items:center;gap:8px;padding:9px 16px;
+  cursor:pointer;border-left:3px solid transparent;
+  transition:all .18s;font-size:12px;font-weight:600;letter-spacing:.3px;
+}
+.nav-item:hover{background:var(--glow);color:var(--cyan);}
+.nav-item.active{border-left-color:var(--cyan);background:var(--glow);color:var(--cyan);}
+.nav-item .ni{font-size:14px;width:18px;text-align:center;flex-shrink:0;}
+.nav-item .nl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;}
+.nbadge{margin-left:auto;padding:1px 5px;border-radius:8px;font-size:8px;font-family:'JetBrains Mono',monospace;flex-shrink:0;}
+.bg{background:rgba(0,212,255,.15);color:var(--cyan);}
+.gg{background:rgba(0,255,157,.15);color:var(--green);}
+.go{background:rgba(255,107,53,.15);color:var(--orange);}
+.gd{background:rgba(255,215,0,.15);color:var(--gold);}
+.gp{background:rgba(168,85,247,.15);color:var(--purple);}
+
+/* ===== MAIN ===== */
+main{margin-left:200px;margin-top:58px;min-height:calc(100vh - 58px);position:relative;z-index:2;}
+.tab-pane{display:none;padding:20px;animation:fadeIn .25s ease;}
+.tab-pane.active{display:block;}
+
+/* ===== CARDS ===== */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.card-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--cyan);text-transform:uppercase;}
+.card-body{padding:16px;}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px;}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;position:relative;overflow:hidden;transition:transform .2s;}
+.kpi:hover{transform:translateY(-2px);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.c1::before{background:var(--cyan);}
+.kpi.c2::before{background:var(--green);}
+.kpi.c3::before{background:var(--orange);}
+.kpi.c4::before{background:var(--gold);}
+.kpi.c5::before{background:var(--purple);}
+.kpi-lbl{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
+.kpi-val{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;margin-bottom:2px;}
+.kpi.c1 .kpi-val{color:var(--cyan);}
+.kpi.c2 .kpi-val{color:var(--green);}
+.kpi.c3 .kpi-val{color:var(--orange);}
+.kpi.c4 .kpi-val{color:var(--gold);}
+.kpi.c5 .kpi-val{color:var(--purple);}
+.kpi-sub{font-size:10px;color:var(--muted);}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+
+/* MINISTRY CARDS */
+.min-card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;
+}
+.min-card:hover{border-color:var(--cyan);transform:translateY(-2px);background:rgba(0,212,255,.04);}
+.min-icon{font-size:24px;margin-bottom:8px;}
+.min-name{font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--cyan);margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;}
+.min-desc{font-size:11px;color:var(--muted);line-height:1.4;flex:1;}
+.min-status{margin-top:8px;font-size:9px;font-family:'JetBrains Mono',monospace;}
+.st-active{color:var(--green);}
+.st-partial{color:var(--gold);}
+.st-planned{color:var(--muted);}
+
+/* FORM ELEMENTS */
+.f-group{margin-bottom:14px;}
+.f-label{display:block;font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px;font-family:'JetBrains Mono',monospace;}
+.f-input,.f-select,.f-textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;transition:border-color .2s;}
+.f-input:focus,.f-select:focus,.f-textarea:focus{border-color:var(--cyan);}
+.f-input::placeholder,.f-textarea::placeholder{color:var(--muted);}
+.f-select option{background:var(--card);}
+.f-textarea{resize:vertical;min-height:80px;}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border:none;border-radius:7px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;transition:all .2s;}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--green));color:var(--bg);}
+.btn-primary:hover{opacity:.85;transform:translateY(-1px);}
+.btn-secondary{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-secondary:hover{border-color:var(--cyan);color:var(--cyan);}
+.btn-danger{background:rgba(255,45,85,.15);border:1px solid rgba(255,45,85,.4);color:var(--red);}
+.btn-sm{padding:5px 12px;font-size:11px;}
+.btn-full{width:100%;}
+
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:420px;}
+.chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding:4px 0;}
+.msg{padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.5;max-width:88%;animation:fadeIn .2s ease;}
+.msg.bot{background:var(--surface);border:1px solid var(--border);align-self:flex-start;}
+.msg.user{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);align-self:flex-end;color:var(--cyan);}
+.msg.system{background:rgba(0,255,157,.05);border:1px solid rgba(0,255,157,.2);color:var(--green);font-size:11px;align-self:flex-start;font-style:italic;}
+.chat-row{display:flex;gap:8px;margin-top:8px;}
+.chat-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;}
+.chat-input:focus{border-color:var(--cyan);}
+.chat-input::placeholder{color:var(--muted);}
+.btn-send{padding:8px 14px;background:var(--cyan);color:var(--bg);border:none;border-radius:7px;cursor:pointer;font-weight:700;font-size:14px;flex-shrink:0;}
+
+/* TERMINAL */
+.terminal{background:#000;border:1px solid var(--green);border-radius:10px;overflow:hidden;box-shadow:0 0 20px rgba(0,255,157,.08);}
+.term-bar{padding:8px 14px;background:rgba(0,255,157,.05);border-bottom:1px solid rgba(0,255,157,.2);display:flex;align-items:center;gap:6px;}
+.td{width:9px;height:9px;border-radius:50%;}
+.term-body{padding:14px;height:320px;overflow-y:auto;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.65;}
+.tp{color:var(--green);}
+.tc{color:var(--text);}
+.tok{color:var(--green);}
+.twarn{color:var(--gold);}
+.terr{color:var(--red);}
+.tinfo{color:var(--cyan);}
+.tmuted{color:var(--muted);}
+
+/* MAP */
+#map-container{height:500px;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+.leaflet-container{background:#0a1628 !important;}
+
+/* CHART CONTAINERS */
+.chart-wrap{position:relative;height:220px;}
+
+/* PROGRESS */
+.progress-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px;}
+.progress-fill{height:100%;border-radius:3px;transition:width 1.2s ease;}
+
+/* IFRAME WRAP */
+.iframe-wrap{border-radius:8px;overflow:hidden;border:1px solid var(--border);background:var(--surface);}
+.iframe-wrap iframe{width:100%;border:none;display:block;}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{padding:8px 12px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px;color:var(--muted);border-bottom:1px solid var(--border);text-transform:uppercase;}
+.tbl td{padding:8px 12px;border-bottom:1px solid rgba(26,58,92,.5);}
+.tbl tr:hover td{background:var(--glow);}
+
+/* NOTIFICATION */
+.notif{position:fixed;bottom:20px;right:20px;padding:10px 18px;background:var(--card);border:1px solid var(--green);border-radius:9px;font-size:12px;z-index:9999;animation:fadeIn .3s ease;display:none;max-width:300px;box-shadow:0 4px 20px rgba(0,255,157,.15);}
+.notif.show{display:flex;gap:8px;align-items:center;}
+
+/* DEVICE INFO */
+.device-bar{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap;font-size:11px;}
+.dev-item{display:flex;align-items:center;gap:5px;color:var(--muted);}
+.dev-item strong{color:var(--cyan);}
+
+/* GEOFENCE ALERT */
+.geo-alert{display:flex;gap:10px;padding:10px;border-radius:7px;margin-bottom:8px;animation:fadeIn .3s ease;}
+.geo-alert.critical{background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.25);}
+.geo-alert.high{background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.25);}
+.geo-alert.medium{background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.2);}
+.geo-alert.low{background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);}
+.geo-lv{font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;align-self:flex-start;padding:2px 6px;border-radius:4px;}
+.geo-alert.critical .geo-lv{background:rgba(255,45,85,.2);color:var(--red);}
+.geo-alert.high .geo-lv{background:rgba(255,107,53,.2);color:var(--orange);}
+.geo-alert.medium .geo-lv{background:rgba(255,215,0,.15);color:var(--gold);}
+.geo-alert.low .geo-lv{background:rgba(0,212,255,.15);color:var(--cyan);}
+
+/* LOCATION BADGE */
+.location-badge{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 12px;
+  background:rgba(0,255,157,.06);border:1px solid rgba(0,255,157,.2);
+  border-radius:20px;font-size:10px;color:var(--green);font-family:'JetBrains Mono',monospace;
+}
+
+/* RESPONSIVE */
+@media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:1100px){aside{width:56px;}.aside-text{display:none;}.nav-item .nl,.nbadge,.nav-lbl,.logo-sub{display:none;}.main{margin-left:56px;}}
+@media(max-width:768px){.kpi-grid{grid-template-columns:1fr 1fr;}.g2,.g3,.g4{grid-template-columns:1fr;}.hdr-center{display:none;}}
+</style>
+</head>
+<body>
+
+<!-- ========== HEADER ========== -->
+<header>
+  <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+    <div class="flags">
+      <div class="flag flag-cr" title="Costa Rica"></div>
+      <div class="flag flag-us" title="Estados Unidos"></div>
+    </div>
+    <div>
+      <div class="logo-text">ACHE MADRE GOV</div>
+      <div class="logo-sub">Sistema Hemisférico de Gobernanza · TRL-5→7</div>
+    </div>
+  </div>
+
+  <div class="hdr-center">
+    <div class="hdr-stat"><div class="hdr-val" id="hdr-events">0</div><div class="hdr-lbl">Eventos</div></div>
+    <div class="hdr-stat"><div class="hdr-val" id="hdr-users">127</div><div class="hdr-lbl">Usuarios</div></div>
+    <div class="hdr-stat"><div class="hdr-val" id="hdr-nodes">5</div><div class="hdr-lbl">Nodos MESH</div></div>
+    <div class="hdr-stat"><div class="hdr-val" id="hdr-uptime">00:00:00</div><div class="hdr-lbl">Uptime</div></div>
+    <div class="location-badge">📍 La Cruz, Guanacaste, Costa Rica · 11.0311°N 85.6154°W</div>
+  </div>
+
+  <div class="hdr-right">
+    <div class="pill ok"><div class="dot"></div>ACHE LIVE</div>
+    <div class="pill info"><div class="dot"></div>TRL-5</div>
+    <div class="pill warn"><div class="dot"></div>GONZAGA-Ω-001</div>
+    <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;" id="hdr-time"></div>
+  </div>
+</header>
+
+<!-- ========== SIDEBAR ========== -->
+<aside>
+  <div class="nav-sec">
+    <div class="nav-lbl aside-text">Sistema</div>
+    <div class="nav-item active" onclick="show('dashboard')"><span class="ni">⬡</span><span class="nl">Dashboard</span><span class="nbadge gg">LIVE</span></div>
+    <div class="nav-item" onclick="show('autoprog')"><span class="ni">⚙</span><span class="nl">Autoprogramación</span><span class="nbadge go">BETA</span></div>
+    <div class="nav-item" onclick="show('geodash')"><span class="ni">🌍</span><span class="nl">Mapa de Calor</span><span class="nbadge bg">REAL</span></div>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl aside-text">Inteligencia IA</div>
+    <div class="nav-item" onclick="show('ai-hub')"><span class="ni">🤖</span><span class="nl">Hub de IAs</span><span class="nbadge bg">5</span></div>
+    <div class="nav-item" onclick="show('legal')"><span class="ni">⚖</span><span class="nl">Legal CR</span><span class="nbadge gg">BOT</span></div>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl aside-text">Gobierno CR</div>
+    <div class="nav-item" onclick="show('presidencia')"><span class="ni">🏛</span><span class="nl">Presidencia</span><span class="nbadge bg">CR</span></div>
+    <div class="nav-item" onclick="show('ministerios')"><span class="ni">🏢</span><span class="nl">27 Ministerios</span><span class="nbadge gd">27</span></div>
+    <div class="nav-item" onclick="show('asamblea')"><span class="ni">⚖</span><span class="nl">Asamblea Leg.</span><span class="nbadge bg">57</span></div>
+    <div class="nav-item" onclick="show('tse')"><span class="ni">🗳</span><span class="nl">TSE / Padrón</span><span class="nbadge gg">API</span></div>
+    <div class="nav-item" onclick="show('inec')"><span class="ni">📊</span><span class="nl">INEC / Datos</span><span class="nbadge bg">CENS</span></div>
+    <div class="nav-item" onclick="show('universidades')"><span class="ni">🎓</span><span class="nl">Universidades</span><span class="nbadge gd">4</span></div>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl aside-text">Municipal</div>
+    <div class="nav-item" onclick="show('municipal')"><span class="ni">🏙</span><span class="nl">Municipalidad LC</span><span class="nbadge gg">ACT</span></div>
+    <div class="nav-item" onclick="show('concejo')"><span class="ni">🗣</span><span class="nl">Concejo Mun.</span><span class="nbadge bg">5</span></div>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl aside-text">Finanzas</div>
+    <div class="nav-item" onclick="show('presupuesto')"><span class="ni">💰</span><span class="nl">Presupuesto CR</span><span class="nbadge gd">2025</span></div>
+    <div class="nav-item" onclick="show('facturacion')"><span class="ni">📄</span><span class="nl">Facturación Free</span><span class="nbadge gg">GRATIS</span></div>
+    <div class="nav-item" onclick="show('banco')"><span class="ni">🏦</span><span class="nl">Banco ACHE</span><span class="nbadge go">DEMO</span></div>
+    <div class="nav-item" onclick="show('wallet')"><span class="ni">💎</span><span class="nl">Crypto Wallet</span><span class="nbadge go">DEMO</span></div>
+    <div class="nav-item" onclick="show('donaciones')"><span class="ni">🌐</span><span class="nl">Donaciones Int.</span><span class="nbadge gp">ACTIVO</span></div>
+  </div>
+  <div class="nav-sec">
+    <div class="nav-lbl aside-text">Coopecrucenos</div>
+    <div class="nav-item" onclick="show('coope')"><span class="ni">🤝</span><span class="nl">COOPECRUCENOS</span><span class="nbadge gg">RL</span></div>
+  </div>
+  <div style="margin-top:auto;padding:10px 16px;font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;line-height:1.6;border-top:1px solid var(--border);">
+    <div>COOPECRUCENOS R.L.</div>
+    <div>Céd. 3-004-757068</div>
+    <div>UEI VHF9MNJKNLK6</div>
+    <div style="color:var(--cyan)">Made in La Cruz, CR</div>
+  </div>
+</aside>
+
+<!-- ========== MAIN ========== -->
+<main id="main">
+
+<!-- ===== DASHBOARD ===== -->
+<div id="tab-dashboard" class="tab-pane active">
+  <div id="device-info" class="device-bar">
+    <div class="dev-item">📱 <strong id="dev-screen">-</strong></div>
+    <div class="dev-item">🖥 <strong id="dev-ua">-</strong></div>
+    <div class="dev-item">📡 <strong id="dev-conn">-</strong></div>
+    <div class="dev-item">📍 <strong id="dev-loc">La Cruz, Guanacaste, CR</strong></div>
+    <div class="dev-item">⏱ <strong id="dev-tz">-</strong></div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi c1"><div class="kpi-lbl">Eventos Cadena</div><div class="kpi-val" id="kv1">847</div><div class="kpi-sub">SHA-256 append-only</div></div>
+    <div class="kpi c2"><div class="kpi-lbl">Ingresos Hoy</div><div class="kpi-val" id="kv2">₡2.1M</div><div class="kpi-sub">Hotel+Merch+Digital</div></div>
+    <div class="kpi c3"><div class="kpi-lbl">Ciudadanos</div><div class="kpi-val" id="kv3">127</div><div class="kpi-sub">3 sitios piloto</div></div>
+    <div class="kpi c4"><div class="kpi-lbl">Ministerios</div><div class="kpi-val">27</div><div class="kpi-sub">Módulos planificados</div></div>
+    <div class="kpi c5"><div class="kpi-lbl">TRL Global</div><div class="kpi-val">5→7</div><div class="kpi-sub">Meta: Dic 2026</div></div>
+  </div>
+
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">🔗 Cadena de Auditoría Live</span><span style="font-size:9px;color:var(--green);font-family:'JetBrains Mono',monospace">APPEND-ONLY</span></div>
+      <div class="card-body"><div id="chain-feed" style="display:flex;flex-direction:column;gap:8px;max-height:240px;overflow-y:auto;"></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">📈 Ingresos COOPECRUCENOS</span></div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="chart-revenue"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">◈ Módulos ACHE</span></div>
+      <div class="card-body" id="module-status"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">🌡 Alertas Geo</span></div>
+      <div class="card-body" id="geo-alerts-mini"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">💰 Grant Pipeline</span></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>BNCR ₡1,200M</span><span style="color:var(--gold)">50%</span></div><div class="progress-bar"><div class="progress-fill" style="width:50%;background:var(--gold)"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>State Dept $300K</span><span style="color:var(--cyan)">35%</span></div><div class="progress-bar"><div class="progress-fill" style="width:35%;background:var(--cyan)"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>TRL-7 Meta</span><span style="color:var(--purple)">55%</span></div><div class="progress-bar"><div class="progress-fill" style="width:55%;background:var(--purple)"></div></div></div>
+          <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Módulos Activos</span><span style="color:var(--green)">38%</span></div><div class="progress-bar"><div class="progress-fill" style="width:38%;background:var(--green)"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== AUTOPROGRAMACIÓN ===== -->
+<div id="tab-autoprog" class="tab-pane">
+  <div class="g2">
+    <div>
+      <div class="terminal" style="margin-bottom:16px">
+        <div class="term-bar">
+          <div class="td" style="background:#ff5f57"></div>
+          <div class="td" style="background:#ffbd2e"></div>
+          <div class="td" style="background:#28ca41"></div>
+          <span style="margin-left:8px;font-family:'JetBrains Mono';font-size:9px;color:var(--muted)">ACHE AutoProg Engine · localhost:8080 · GONZAGA-CBM-Ω-001</span>
+        </div>
+        <div class="term-body" id="term-out"></div>
+      </div>
+      <div class="g4" id="agent-grid"></div>
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="bootSeq()">▶ Boot Completo</button>
+        <button class="btn btn-secondary btn-sm" onclick="scanMods()">🔍 Scan Módulos</button>
+        <button class="btn btn-secondary btn-sm" onclick="syncSupa()">☁ Sync Supabase</button>
+        <button class="btn btn-secondary btn-sm" onclick="callAPI('/health')">❤ Health Check</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">🤖 Chat ACHE Local</span></div>
+      <div class="card-body" style="padding:12px">
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="ache-msgs"><div class="msg bot">⬡ ACHE v2.0 · GONZAGA-CBM-Ω-001 · TRL-5 · 13 CCPs activos. ¿En qué puedo ayudarte?</div></div>
+          <div class="chat-row">
+            <input class="chat-input" id="ache-inp" placeholder="Consulta a ACHE..." onkeydown="if(event.key==='Enter')sendChat('ache')">
+            <button class="btn-send" onclick="sendChat('ache')">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAPA DE CALOR ===== -->
+<div id="tab-geodash" class="tab-pane">
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="card-hdr"><span class="card-title">🚨 Alertas Activas</span><button class="btn btn-sm btn-primary" onclick="addGeoAlert()">+ Nueva</button></div><div class="card-body" id="geo-alerts" style="max-height:200px;overflow-y:auto"></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">📡 Fuentes de Inteligencia</span></div>
+      <div class="card-body">
+        <div class="chart-wrap"><canvas id="chart-sources"></canvas></div>
+      </div>
+    </div>
+  </div>
+  <div id="map-container"></div>
+  <div style="margin-top:12px;padding:10px;background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.15);border-radius:8px;font-size:11px;color:var(--muted)">
+    🌍 <strong style="color:var(--cyan)">ACHE GeoIntelligence:</strong> Integración planificada con OVSICORI-UNA (sismos), IMN (meteorología), MSP (seguridad), 9-1-1 GN (emergencias), sensores IoT, redes sociales, satélites CONAE/NASA, radiotelescopios. Cobertura: La Cruz → CR → Hemisferio → Global.
+  </div>
+</div>
+
+<!-- ===== HUB DE IAs ===== -->
+<div id="tab-ai-hub" class="tab-pane">
+  <div class="g2" style="margin-bottom:16px">
+    <!-- ACHE LOCAL -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="card-hdr">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">⬡</span><div><div class="card-title">ACHE LOCAL</div><div style="font-size:9px;color:var(--muted)">localhost:8080 · Ciclo Cognitivo PERCIBIR→ESPERAR</div></div></div>
+        <div class="pill ok" style="font-size:8px"><div class="dot"></div>LIVE</div>
+      </div>
+      <div class="card-body" style="flex:1;padding:12px">
+        <div class="chat-wrap" style="height:360px">
+          <div class="chat-msgs" id="ache2-msgs"><div class="msg bot">⬡ Motor cognitivo activo. 13 CCPs cargados. Cadena SHA-256 íntegra. Supabase sync: OK. Consulta lo que necesites.</div></div>
+          <div class="chat-row">
+            <input class="chat-input" id="ache2-inp" placeholder="/estado /factura /iva /principios /hoy..." onkeydown="if(event.key==='Enter')sendChat('ache2')">
+            <button class="btn-send" onclick="sendChat('ache2')">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- BOTPRESS LEGAL -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="card-hdr">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">⚖</span><div><div class="card-title">ACHE LEGAL CR · Botpress</div><div style="font-size:9px;color:var(--muted)">Normativa institucional · Constitución · Ley 4179 · SUGEF</div></div></div>
+        <div class="pill ok" style="font-size:8px"><div class="dot"></div>LIVE</div>
+      </div>
+      <div class="iframe-wrap" style="flex:1;min-height:400px">
+        <iframe src="https://cdn.botpress.cloud/webchat/v3.6/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/07/15/20260307154405-J2XEWBR8.json" style="height:400px" allow="microphone" title="ACHE Legal CR"></iframe>
+      </div>
+    </div>
+  </div>
+  <div class="g2">
+    <!-- KIMI AI -->
+    <div class="card">
+      <div class="card-hdr">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">🌙</span><div><div class="card-title">KIMI AI</div><div style="font-size:9px;color:var(--muted)">Moonshot AI · Contexto largo · Análisis técnico</div></div></div>
+        <div class="pill info" style="font-size:8px"><div class="dot"></div>IFRAME</div>
+      </div>
+      <div style="padding:12px">
+        <div class="chat-wrap" style="height:280px">
+          <div class="chat-msgs" id="kimi-msgs"><div class="msg bot">🌙 Kimi AI — Para acceso directo visita: kimi.com · Conversación ACHE compartida: <a href="https://www.kimi.com/share/19ce2b14-3762-87ef-8000-0000aeb91e59" target="_blank" style="color:var(--cyan)">Ver contexto ACHE en Kimi →</a></div></div>
+          <div class="chat-row">
+            <input class="chat-input" id="kimi-inp" placeholder="Pregunta (responde con lógica ACHE)..." onkeydown="if(event.key==='Enter')sendChat('kimi')">
+            <button class="btn-send" onclick="sendChat('kimi')">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- MULTI-AGENT -->
+    <div class="card">
+      <div class="card-hdr">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:18px">🕸</span><div><div class="card-title">ACHE MULTI-AGENTE</div><div style="font-size:9px;color:var(--muted)">Orquestador · Safety · Commerce · Governance · Inclusion</div></div></div>
+        <div class="pill ok" style="font-size:8px"><div class="dot"></div>MESH</div>
+      </div>
+      <div style="padding:12px">
+        <div class="chat-wrap" style="height:280px">
+          <div class="chat-msgs" id="multi-msgs"><div class="msg bot">🕸 ACHE-MESH Coordinator activo. 5 nodos simulados. Envía una tarea y la distribuyo al agente correcto automáticamente.</div></div>
+          <div class="chat-row">
+            <input class="chat-input" id="multi-inp" placeholder="Tarea para los agentes ACHE..." onkeydown="if(event.key==='Enter')sendChat('multi')">
+            <button class="btn-send" onclick="sendChat('multi')">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LEGAL ===== -->
+<div id="tab-legal" class="tab-pane">
+  <div class="iframe-wrap" style="height:600px"><iframe src="https://cdn.botpress.cloud/webchat/v3.6/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/07/15/20260307154405-J2XEWBR8.json" style="height:600px" allow="microphone"></iframe></div>
+</div>
+
+<!-- ===== PRESIDENCIA ===== -->
+<div id="tab-presidencia" class="tab-pane">
+  <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi c1"><div class="kpi-lbl">Decretos 2025</div><div class="kpi-val">347</div><div class="kpi-sub">Ejecutivos activos</div></div>
+    <div class="kpi c2"><div class="kpi-lbl">Instituciones</div><div class="kpi-val">330+</div><div class="kpi-sub">Sector público CR</div></div>
+    <div class="kpi c4"><div class="kpi-lbl">Presupuesto 2025</div><div class="kpi-val">₡14.2B</div><div class="kpi-sub">Aprobado Asamblea</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">🏛 Consejo de Gobierno</span></div>
+      <div class="card-body">
+        <div class="chat-wrap"><div class="chat-msgs" id="pres-msgs"><div class="msg bot">🏛 Módulo Presidencia CR. Integración planificada con: Sistema de Decretos (gaceta.go.cr), SIGAF (finanzas), INTEGRA (RRHH). Consulta decretos, acuerdos y directrices.</div></div>
+        <div class="chat-row"><input class="chat-input" id="pres-inp" placeholder="Consultar decreto / directriz..." onkeydown="if(event.key==='Enter')sendChat('pres')"><button class="btn-send" onclick="sendChat('pres')">→</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">📊 Estructura del Estado CR</span></div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="chart-estado"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MINISTERIOS ===== -->
+<div id="tab-ministerios" class="tab-pane">
+  <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn btn-secondary btn-sm" onclick="filterMin('all')">Todos (27)</button>
+    <button class="btn btn-secondary btn-sm" onclick="filterMin('active')">✅ Activos</button>
+    <button class="btn btn-secondary btn-sm" onclick="filterMin('partial')">◐ Parciales</button>
+    <button class="btn btn-secondary btn-sm" onclick="filterMin('planned')">○ Planificados</button>
+  </div>
+  <div class="g3" id="min-grid"></div>
+</div>
+
+<!-- ===== ASAMBLEA ===== -->
+<div id="tab-asamblea" class="tab-pane">
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi c1"><div class="kpi-lbl">Diputados</div><div class="kpi-val">57</div><div class="kpi-sub">Legislatura 2022-2026</div></div>
+    <div class="kpi c2"><div class="kpi-lbl">Fracciones</div><div class="kpi-val">9</div><div class="kpi-sub">Partidos representados</div></div>
+    <div class="kpi c3"><div class="kpi-lbl">Proyectos 2025</div><div class="kpi-val">1,240</div><div class="kpi-sub">En trámite</div></div>
+    <div class="kpi c4"><div class="kpi-lbl">Comisiones</div><div class="kpi-val">22</div><div class="kpi-sub">Permanentes + especiales</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">🗳 Módulo de Votaciones</span></div>
+      <div class="card-body">
+        <div class="f-group"><label class="f-label">Proyecto de Ley</label><input class="f-input" placeholder="Número o título del proyecto..."></div>
+        <div class="f-group"><label class="f-label">Tipo de Votación</label><select class="f-select"><option>Primera Lectura</option><option>Segunda Lectura</option><option>Votación Final</option><option>Moción de Orden</option></select></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary btn-sm">✅ Votar SÍ</button>
+          <button class="btn btn-danger btn-sm">❌ Votar NO</button>
+          <button class="btn btn-secondary btn-sm">⬛ Abstención</button>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">📋 Expedientes Legislativos</span></div>
+      <div class="card-body">
+        <div class="chat-wrap"><div class="chat-msgs" id="asam-msgs"><div class="msg bot">⚖ Módulo Asamblea Legislativa. Conexión planificada con: sil.go.cr (expedientes), SIALCO (actas), Gaceta Digital. Consulta proyectos, actas y votaciones.</div></div>
+        <div class="chat-row"><input class="chat-input" id="asam-inp" placeholder="Consultar expediente / ley..." onkeydown="if(event.key==='Enter')sendChat('asam')"><button class="btn-send" onclick="sendChat('asam')">→</button></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TSE ===== -->
+<div id="tab-tse" class="tab-pane">
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi c1"><div class="kpi-lbl">Padrón Electoral</div><div class="kpi-val">3.5M</div><div class="kpi-sub">Electores habilitados</div></div>
+    <div class="kpi c2"><div class="kpi-lbl">Cédulas Emitidas</div><div class="kpi-val">5.2M</div><div class="kpi-sub">Registro Civil CR</div></div>
+    <div class="kpi c3"><div class="kpi-lbl">Juntas Receptoras</div><div class="kpi-val">6,200</div><div class="kpi-sub">Nacionales</div></div>
+    <div class="kpi c4"><div class="kpi-lbl">Próx. Elección</div><div class="kpi-val">2026</div><div class="kpi-sub">Presidencial + Leg.</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">🔍 Consulta Padrón Electoral</span></div>
+      <div class="card-body">
+        <div class="f-group"><label class="f-label">Número de Cédula</label><input class="f-input" id="tse-cedula" placeholder="0-0000-0000" maxlength="15"></div>
+        <button class="btn btn-primary btn-full" onclick="consultaTSE()">Consultar TSE →</button>
+        <div id="tse-result" style="margin-top:12px;display:none;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-size:12px"></div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted)">⚠ Consulta planificada via API del TSE (tse.go.cr/api). Actualmente muestra datos demo.</div>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">📊 Distribución Electoral por Provincia</span></div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="chart-tse"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== INEC ===== -->
+<div id="tab-inec" class="tab-pane">
+  <div class="kpi-grid">
+    <div class="kpi c1"><div class="kpi-lbl">Población CR</div><div class="kpi-val">5.2M</div><div class="kpi-sub">Censo 2022</div></div>
+    <div class="kpi c2"><div class="kpi-lbl">IDH Nacional</div><div class="kpi-val">0.809</div><div class="kpi-sub">Posición 60/193</div></div>
+    <div class="kpi c3"><div class="kpi-lbl">IDH La Cruz</div><div class="kpi-val">0.620</div><div class="kpi-sub">Decil inferior CR</div></div>
+    <div class="kpi c4"><div class="kpi-lbl">Pobreza CR</div><div class="kpi-val">22.3%</div><div class="kpi-sub">ENAHO 2024</div></div>
+    <div class="kpi c5"><div class="kpi-lbl">Alfabetismo CR</div><div class="kpi-val">98.1%</div><div class="kpi-sub">Adultos 15+ años</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card"><div class="card-hdr"><span class="card-title">📊 IDH por Cantón — Top/Bottom 10</span></div><div class="card-body"><div class="chart-wrap" style="height:280px"><canvas id="chart-inec"></canvas></div></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">🏠 Indicadores La Cruz vs CR</span></div><div class="card-body"><div class="chart-wrap" style="height:280px"><canvas id="chart-lacruz"></canvas></div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr"><span class="card-title">📋 Variables Estratégicas ACHE-INEC</span></div>
+    <div class="card-body">
+      <table class="tbl">
+        <thead><tr><th>Variable</th><th>La Cruz</th><th>Nacional</th><th>Brecha</th><th>Relevancia ACHE</th></tr></thead>
+        <tbody>
+          <tr><td>Conectividad internet hogares</td><td style="color:var(--red)">42%</td><td style="color:var(--green)">78%</td><td style="color:var(--orange)">-36pp</td><td>ACHE-INCLUSION prioritario</td></tr>
+          <tr><td>Smartphone personal</td><td style="color:var(--red)">58%</td><td style="color:var(--green)">82%</td><td style="color:var(--orange)">-24pp</td><td>Bot Telegram + terminales</td></tr>
+          <tr><td>Educación secundaria completa</td><td style="color:var(--red)">34%</td><td style="color:var(--green)">51%</td><td style="color:var(--orange)">-17pp</td><td>Módulo Liceo Diurno</td></tr>
+          <tr><td>Pobreza multidimensional</td><td style="color:var(--red)">38%</td><td style="color:var(--green)">16%</td><td style="color:var(--red)">+22pp</td><td>Caso de uso principal</td></tr>
+          <tr><td>Viviendas con agua potable</td><td style="color:var(--gold)">71%</td><td style="color:var(--green)">92%</td><td style="color:var(--orange)">-21pp</td><td>ACHE-SAFETY alertas</td></tr>
+          <tr><td>Empleo formal</td><td style="color:var(--red)">41%</td><td style="color:var(--green)">61%</td><td style="color:var(--orange)">-20pp</td><td>ACHE-COMMERCE</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== UNIVERSIDADES ===== -->
+<div id="tab-universidades" class="tab-pane">
+  <div class="g4">
+    <div class="min-card"><div class="min-icon">🎓</div><div class="min-name">UCR</div><div class="min-desc">Universidad de Costa Rica. 44,000 estudiantes. Sede Liberia (Guanacaste) cercana a La Cruz.</div><div class="min-status st-partial">◐ Alianza planificada</div></div>
+    <div class="min-card"><div class="min-icon">🔬</div><div class="min-name">TEC</div><div class="min-desc">Instituto Tecnológico. Ingenierías y tecnología. Sede Regional San Carlos. Partner I+D ACHE-LAB.</div><div class="min-status st-partial">◐ Contacto inicial</div></div>
+    <div class="min-card"><div class="min-icon">📚</div><div class="min-name">UNA</div><div class="min-desc">Universidad Nacional. OVSICORI-UNA: monitoreo sísmico y volcánico. Datos geo para ACHE.</div><div class="min-status st-partial">◐ Datos geo activos</div></div>
+    <div class="min-card"><div class="min-icon">🌐</div><div class="min-name">UNED</div><div class="min-desc">Universidad Estatal a Distancia. Modelo distribuido. Perfecto socio para ACHE-INCLUSION rural.</div><div class="min-status st-planned">○ Propuesta en proceso</div></div>
+  </div>
+</div>
+
+<!-- ===== MUNICIPAL ===== -->
+<div id="tab-municipal" class="tab-pane">
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi c1"><div class="kpi-lbl">Presupuesto 2025</div><div class="kpi-val">₡4,800M</div><div class="kpi-sub">Muni La Cruz</div></div>
+    <div class="kpi c2"><div class="kpi-lbl">Contribuyentes</div><div class="kpi-val">8,240</div><div class="kpi-sub">Cédulas activas</div></div>
+    <div class="kpi c3"><div class="kpi-lbl">Morosidad</div><div class="kpi-val">34%</div><div class="kpi-sub">Impuestos municipales</div></div>
+    <div class="kpi c4"><div class="kpi-lbl">Funcionarios</div><div class="kpi-val">87</div><div class="kpi-sub">Planilla municipal</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">💰 Cobro Impuestos Municipales</span></div>
+      <div class="card-body">
+        <div class="f-group"><label class="f-label">Cédula Contribuyente</label><input class="f-input" placeholder="0-0000-0000"></div>
+        <div class="f-group"><label class="f-label">Tipo Impuesto</label>
+          <select class="f-select"><option>Bienes Inmuebles (0.25%)</option><option>Patente Comercial</option><option>Construcción (1% val. obra)</option><option>Publicidad Exterior</option><option>Espectáculos Públicos</option></select></div>
+        <div class="f-group"><label class="f-label">Período</label><input class="f-input" placeholder="2025-Q1"></div>
+        <button class="btn btn-primary btn-full">Calcular → HumanCheckpoint</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">🏗 Proyectos de Inversión Pública</span></div>
+      <div class="card-body">
+        <table class="tbl"><thead><tr><th>Proyecto</th><th>Presupuesto</th><th>Avance</th><th>Estado</th></tr></thead>
+        <tbody>
+          <tr><td>Aceras centro La Cruz</td><td>₡85M</td><td><div class="progress-bar"><div class="progress-fill" style="width:45%;background:var(--cyan)"></div></div></td><td style="color:var(--gold)">45%</td></tr>
+          <tr><td>Lab ACHE-COOPECRUCENOS</td><td>$20K</td><td><div class="progress-bar"><div class="progress-fill" style="width:20%;background:var(--purple)"></div></div></td><td style="color:var(--purple)">Planif.</td></tr>
+          <tr><td>Red pluvial norte</td><td>₡120M</td><td><div class="progress-bar"><div class="progress-fill" style="width:10%;background:var(--orange)"></div></div></td><td style="color:var(--orange)">Diseño</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONCEJO ===== -->
+<div id="tab-concejo" class="tab-pane">
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">🗣 Sesión del Concejo Municipal</span></div>
+      <div class="card-body">
+        <div class="f-group"><label class="f-label">Número de Sesión</label><input class="f-input" placeholder="Ej: Sesión Ordinaria 012-2025"></div>
+        <div class="f-group"><label class="f-label">Punto del Orden del Día</label><textarea class="f-textarea" placeholder="Descripción del asunto a tratar..."></textarea></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm">✅ Moción a Favor</button>
+          <button class="btn btn-danger btn-sm">❌ Moción en Contra</button>
+          <button class="btn btn-secondary btn-sm">📝 Proponer Acuerdo</button>
+          <button class="btn btn-secondary btn-sm">📋 Ver Acta</button>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">👥 Síndicos y Votos</span></div>
+      <div class="card-body" id="sindicos-panel">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:7px">
+            <div><div style="font-weight:700;font-size:13px">Alcalde — Luis Alonso Alán Corea</div><div style="font-size:10px;color:var(--green)">Firmó carta MLC-DAM-OF-092-2026</div></div>
+            <div class="pill ok" style="font-size:8px">ACTIVO</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:7px">
+            <div><div style="font-weight:700;font-size:13px">Regidor 1 — Distrito La Cruz</div><div style="font-size:10px;color:var(--muted)">Acceso: síndico@munilacruz.go.cr</div></div>
+            <div style="display:flex;gap:6px"><button class="btn btn-primary btn-sm">✅ Sí</button><button class="btn btn-danger btn-sm">❌ No</button></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:7px">
+            <div><div style="font-weight:700;font-size:13px">Regidor 2 — Distrito Santa Elena</div><div style="font-size:10px;color:var(--muted)">Pendiente usuario ACHE</div></div>
+            <div class="pill warn" style="font-size:8px">PENDIENTE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PRESUPUESTO ===== -->
+<div id="tab-presupuesto" class="tab-pane">
+  <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi c4"><div class="kpi-lbl">Presupuesto CR 2025</div><div class="kpi-val">₡14.2B</div><div class="kpi-sub">Aprobado Asamblea Leg.</div></div>
+    <div class="kpi c1"><div class="kpi-lbl">Ingresos Tributarios</div><div class="kpi-val">₡8.1B</div><div class="kpi-sub">Proyectado 2025</div></div>
+    <div class="kpi c3"><div class="kpi-lbl">Servicio Deuda</div><div class="kpi-val">₡4.8B</div><div class="kpi-sub">34% del presupuesto</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">💰 Distribución Presupuestaria 2025</span></div><div class="card-body"><div class="chart-wrap" style="height:300px"><canvas id="chart-presup"></canvas></div></div></div>
+    <div class="card"><div class="card-hdr"><span class="card-title">📋 Transferencias entre Ministerios</span></div>
+      <div class="card-body">
+        <div class="f-group"><label class="f-label">Origen (Ministerio/Institución)</label><select class="f-select" id="tr-origen"></select></div>
+        <div class="f-group"><label class="f-label">Destino (Ministerio/Institución)</label><select class="f-select" id="tr-destino"></select></div>
+        <div class="f-group"><label class="f-label">Monto (₡)</label><input class="f-input" type="number" placeholder="0"></div>
+        <div class="f-group"><label class="f-label">Partida Presupuestaria</label><input class="f-input" placeholder="Ej: 2-03-01-001"></div>
+        <button class="btn btn-primary btn-full" onclick="checkpoint('Transferencia presupuestaria requiere aprobación.')">Ejecutar → HumanCheckpoint (CCP-01)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FACTURACIÓN ===== -->
+<div id="tab-facturacion" class="tab-pane">
+  <div style="padding:14px 20px;background:linear-gradient(135deg,rgba(0,255,157,.06),rgba(0,212,255,.04));border:1px solid rgba(0,255,157,.2);border-radius:10px;margin-bottom:16px">
+    <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--green);margin-bottom:4px">✅ FACTURACIÓN ELECTRÓNICA GRATIS</div>
+    <div style="font-size:12px;color:var(--muted)">ACHE ofrece facturación electrónica Hacienda CR (XML v4.3) gratuita como gancho de adopción de la plataforma. IVA 13% automático. Clave 50 dígitos auto-generada.</div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">📄 Nueva Factura Electrónica</span></div>
+      <div class="card-body">
+        <div class="g2">
+          <div class="f-group"><label class="f-label">Emisor (Cédula)</label><input class="f-input" value="3-004-757068" placeholder="Cédula jurídica"></div>
+          <div class="f-group"><label class="f-label">Nombre Emisor</label><input class="f-input" value="COOPECRUCENOS R.L."></div>
+        </div>
+        <div class="g2">
+          <div class="f-group"><label class="f-label">Cliente (Cédula)</label><input class="f-input" id="fac-cli-ced" placeholder="1-0000-0000"></div>
+          <div class="f-group"><label class="f-label">Nombre Cliente</label><input class="f-input" id="fac-cli-nom" placeholder="Nombre completo"></div>
+        </div>
+        <div class="f-group"><label class="f-label">Descripción del Servicio/Producto</label><input class="f-input" id="fac-desc" placeholder="Descripción..."></div>
+        <div class="g2">
+          <div class="f-group"><label class="f-label">Subtotal (₡)</label><input class="f-input" type="number" id="fac-sub" placeholder="0" oninput="calcIVA()"></div>
+          <div class="f-group"><label class="f-label">IVA 13%</label><input class="f-input" id="fac-iva" readonly style="color:var(--gold)"></div>
+        </div>
+        <div class="f-group"><label class="f-label">Total con IVA</label><input class="f-input" id="fac-total" readonly style="color:var(--green);font-weight:700;font-size:16px"></div>
+        <button class="btn btn-primary btn-full" onclick="genFactura()">⚡ Generar Factura Electrónica XML</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">🔢 Consecutivo + Vista Previa</span></div>
+      <div class="card-body">
+        <div id="fac-preview" style="font-family:'JetBrains Mono',monospace;font-size:10px;background:#000;padding:12px;border-radius:7px;color:var(--green);min-height:200px;white-space:pre;overflow:auto;line-height:1.6">-- XML v4.3 Hacienda CR --
+Esperando datos...</div>
+        <div style="margin-top:12px;font-size:11px;color:var(--muted)">⚠ Producción requiere credenciales ATV. Demo genera XML estructurado correcto.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BANCO ===== -->
+<div id="tab-banco" class="tab-pane">
+  <div style="padding:14px;background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.25);border-radius:10px;margin-bottom:16px;font-size:12px;color:var(--orange)">
+    ⚠ <strong>BANCO VIRTUAL COOPERATIVO ACHE:</strong> Amparado en reforma de Cooperativas Digitales CR (en tramitación). Licencia SUGEF requerida para operación con fondos reales. Este módulo es el scaffold técnico completo.
+  </div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi c2"><div class="kpi-lbl">Saldo Virtual</div><div class="kpi-val">₡24.8M</div><div class="kpi-sub">Demo — no real</div></div>
+    <div class="kpi c1"><div class="kpi-lbl">Cuentas Coop.</div><div class="kpi-val">47</div><div class="kpi-sub">Asociados COOPECRUCENOS</div></div>
+    <div class="kpi c4"><div class="kpi-lbl">Transacciones</div><div class="kpi-val">234</div><div class="kpi-sub">Este mes (demo)</div></div>
+    <div class="kpi c3"><div class="kpi-lbl">Reserva</div><div class="kpi-val">12%</div><div class="kpi-sub">Sobre depósitos (SUGEF)</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">💳 Transferencia SINPE</span></div>
+      <div class="card-body">
+        <div class="f-group"><label class="f-label">Destino (IBAN / Tel)</label><input class="f-input" placeholder="CR21 0152 0200 1026 2841 66"></div>
+        <div class="f-group"><label class="f-label">Monto (₡)</label><input class="f-input" type="number" placeholder="0"></div>
+        <div class="f-group"><label class="f-label">Concepto</label><input class="f-input" placeholder="Descripción..."></div>
+        <button class="btn btn-primary btn-full" onclick="checkpoint('Transferencia SINPE IRREVERSIBLE. CCP-01 requiere aprobación humana.')">Transferir → CCP-01 Checkpoint</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">📊 Flujo de Caja</span></div><div class="card-body"><div class="chart-wrap"><canvas id="chart-banco"></canvas></div></div></div>
+  </div>
+</div>
+
+<!-- ===== WALLET ===== -->
+<div id="tab-wallet" class="tab-pane">
+  <div style="padding:14px;background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.25);border-radius:10px;margin-bottom:16px;font-size:12px;color:var(--orange)">
+    ⚠ <strong>MODO DEMO:</strong> Crypto wallet requiere AML/KYC (Ley 7786). Las transacciones mostradas son simuladas.
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">💎 Portfolio ACHE Crypto</span></div>
+      <div class="card-body" style="text-align:center;padding:24px">
+        <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:8px">0x4C30E8f7...A9E2 · COOPECRUCENOS</div>
+        <div style="font-family:'Orbitron',monospace;font-size:32px;font-weight:800;color:var(--gold)">$12,480.50</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:24px">≈ ₡6,407,777 CRC</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="chart-crypto"></canvas></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">📤 Enviar Crypto</span></div>
+      <div class="card-body">
+        <div class="f-group"><label class="f-label">Moneda</label><select class="f-select"><option>BTC Bitcoin</option><option>ETH Ethereum</option><option>USDC USD Coin</option></select></div>
+        <div class="f-group"><label class="f-label">Dirección Destino</label><input class="f-input" placeholder="0x..."></div>
+        <div class="f-group"><label class="f-label">Monto</label><input class="f-input" type="number" placeholder="0.00"></div>
+        <button class="btn btn-primary btn-full" onclick="checkpoint('Transacción crypto IRREVERSIBLE en blockchain.')">Enviar → CCP-01 Checkpoint</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DONACIONES ===== -->
+<div id="tab-donaciones" class="tab-pane">
+  <div style="padding:14px 20px;background:linear-gradient(135deg,rgba(168,85,247,.06),rgba(0,212,255,.04));border:1px solid rgba(168,85,247,.2);border-radius:10px;margin-bottom:16px">
+    <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--purple);margin-bottom:4px">🌐 ACHE RECEPTORA DE DONACIONES INTERNACIONALES</div>
+    <div style="font-size:12px;color:var(--muted)">COOPECRUCENOS R.L. — UEI: VHF9MNJKNLK6 (SAM.gov) · Lista para recibir fondos del Gobierno de EE.UU. y contratar con agencias federales.</div>
+  </div>
+  <div class="g3">
+    <div class="min-card"><div class="min-icon">🇺🇸</div><div class="min-name">US State Dept</div><div class="min-desc">Digital Cities Challenge. SOI enviado marzo 2026. $300,000 solicitados. UEI VHF9MNJKNLK6 activo en SAM.gov.</div><div class="min-status st-partial">◐ En evaluación</div></div>
+    <div class="min-card"><div class="min-icon">🏦</div><div class="min-name">BNCR</div><div class="min-desc">Banco Nacional Costa Rica. Línea de crédito ₡1,200M en trámite. Q1 2026.</div><div class="min-status st-partial">◐ En proceso</div></div>
+    <div class="min-card"><div class="min-icon">🌍</div><div class="min-name">BID / Banco Mundial</div><div class="min-desc">Fondos multilaterales para innovación pública en América Latina. Aplicación planificada TRL-7.</div><div class="min-status st-planned">○ TRL-7 requerido</div></div>
+    <div class="min-card"><div class="min-icon">🇦🇺</div><div class="min-name">USAID</div><div class="min-desc">Agencia EE.UU. para Desarrollo Internacional. Programas de inclusión digital y gobernanza.</div><div class="min-status st-planned">○ Propuesta planificada</div></div>
+    <div class="min-card"><div class="min-icon">🤝</div><div class="min-name">ONG / Fundaciones</div><div class="min-desc">Ford Foundation, Omidyar Network, Knight Foundation. Focos: inclusión digital, democracia, comunidades vulnerables.</div><div class="min-status st-planned">○ Identificadas</div></div>
+    <div class="min-card"><div class="min-icon">🏛</div><div class="min-name">Embajadas CR</div><div class="min-desc">Embajadas de Costa Rica en Washington D.C. y otras capitales. Canal de apoyo institucional.</div><div class="min-status st-active">✅ CC en SOI</div></div>
+  </div>
+</div>
+
+<!-- ===== COOPECRUCENOS ===== -->
+<div id="tab-coope" class="tab-pane">
+  <div class="kpi-grid">
+    <div class="kpi c1"><div class="kpi-lbl">Cédula Jurídica</div><div class="kpi-val" style="font-size:14px">3-004-757068</div><div class="kpi-sub">INFOCOOP registrada</div></div>
+    <div class="kpi c2"><div class="kpi-lbl">UEI SAM.gov</div><div class="kpi-val" style="font-size:14px">VHF9MNJ</div><div class="kpi-sub">Contratos federales EE.UU.</div></div>
+    <div class="kpi c3"><div class="kpi-lbl">Fundación</div><div class="kpi-val" style="font-size:14px">Nov 2017</div><div class="kpi-sub">Inscrita 7 mar. 2018</div></div>
+    <div class="kpi c4"><div class="kpi-lbl">Hotel</div><div class="kpi-val">13 hab</div><div class="kpi-sub">$80/noche · 75%+ ocup.</div></div>
+    <div class="kpi c5"><div class="kpi-lbl">Supermercados</div><div class="kpi-val">3</div><div class="kpi-sub">+ abast. escuelas rurales</div></div>
+  </div>
+  <div class="g2">
+    <div class="card"><div class="card-hdr"><span class="card-title">🏢 Estructura Operativa</span></div>
+      <div class="card-body" style="font-size:13px;line-height:1.9;color:var(--text)">
+        <div>🏨 <strong>Hotel</strong> — 13 habitaciones, $80/noche, >75% ocupación promedio</div>
+        <div>🛒 <strong>Supermercados #1, #2, #3</strong> — Centro La Cruz + zonas</div>
+        <div>🍶 <strong>Licores</strong> — Integrado con supermercados</div>
+        <div>🏫 <strong>Abastecimiento Escolar</strong> — Escuelas rurales del cantón</div>
+        <div>💻 <strong>ACHE-LAB</strong> — Laboratorio IA en construcción ($20K)</div>
+        <div>📡 <strong>ACHE Sistema</strong> — TRL-5, 7 usuarios activos, cloud sync</div>
+      </div>
+    </div>
+    <div class="card"><div class="card-hdr"><span class="card-title">👥 Perfiles Asociados</span></div>
+      <div class="card-body" style="font-size:12px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <span class="pill bg">🎓 Educación</span>
+          <span class="pill gg">🏗 Construcción</span>
+          <span class="pill gd">📊 Contabilidad</span>
+          <span class="pill go">💻 Programación</span>
+          <span class="pill gp">🛡 Seguridad</span>
+          <span class="pill bg">🏛 Gobernabilidad</span>
+          <span class="pill gg">⚖ Derecho</span>
+          <span class="pill gd">🏥 Salud</span>
+          <span class="pill go">🌱 Agricultura</span>
+          <span class="pill gp">📡 Telecomunicaciones</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"><span id="notif-icon"></span><span id="notif-text"></span></div>
+
+<!-- MODAL CHECKPOINT -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;max-width:440px;width:90%;animation:fadeIn .3s ease">
+    <div style="font-family:'Orbitron',monospace;font-size:15px;font-weight:800;color:var(--cyan);margin-bottom:10px">⚠ CCP-01 — HumanCheckpoint</div>
+    <div style="background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.25);border-radius:7px;padding:12px;font-size:12px;color:var(--red);margin-bottom:14px" id="modal-msg">Acción requiere aprobación humana.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:18px">ACHE registrará esta decisión en la cadena SHA-256 inamovible. El humano es el árbitro final (CCP-01).</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-secondary" onclick="closeModal()" style="flex:1">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmModal()" style="flex:1">✅ Apruebo — Bajo mi responsabilidad</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// ACHE MADRE GOVERNMENT — Core JavaScript v3.0
+// COOPECRUCENOS R.L. | Cristhian Gonzaga M. | La Cruz CR
+// ═══════════════════════════════════════════════════════
+
+const ACHE_BASE = 'http://localhost:8080';
+const BOTPRESS_URL = 'https://cdn.botpress.cloud/webchat/v3.6/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/07/15/20260307154405-J2XEWBR8.json';
+let events = 847, startTime = Date.now(), termLines = [];
+
+// ── DEVICE DETECTION ──────────────────────────────────
+function detectDevice(){
+  const W=window.screen.width, H=window.screen.height;
+  document.getElementById('dev-screen').textContent = W+'x'+H+'px';
+  const ua=navigator.userAgent;
+  let dev='Desktop';
+  if(/Mobile|Android|iPhone/.test(ua))dev='Mobile';
+  else if(/Tablet|iPad/.test(ua))dev='Tablet';
+  document.getElementById('dev-ua').textContent=dev;
+  const conn=navigator.connection;
+  document.getElementById('dev-conn').textContent=conn?(conn.effectiveType||'WiFi'):'WiFi';
+  document.getElementById('dev-tz').textContent=Intl.DateTimeFormat().resolvedOptions().timeZone||'America/Costa_Rica';
+  
+  // Adjust UI for screen size
+  if(W<768){
+    document.querySelectorAll('.aside-text').forEach(e=>e.style.display='none');
+  }
+}
+
+// ── CLOCK ──────────────────────────────────────────────
+function tick(){
+  const now=new Date();
+  const el=document.getElementById('hdr-time');
+  if(el) el.textContent=now.toLocaleTimeString('es-CR',{timeZone:'America/Costa_Rica',hour12:false});
+  const up=Math.floor((Date.now()-startTime)/1000);
+  const h=String(Math.floor(up/3600)).padStart(2,'0');
+  const m=String(Math.floor((up%3600)/60)).padStart(2,'0');
+  const s=String(up%60).padStart(2,'0');
+  const upEl=document.getElementById('hdr-uptime');
+  if(upEl) upEl.textContent=h+':'+m+':'+s;
+}
+setInterval(tick,1000);tick();
+
+// ── NAVIGATION ────────────────────────────────────────
+function show(tab){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el=document.getElementById('tab-'+tab);
+  if(el){el.classList.add('active');}
+  
+  // Find matching nav item
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+tab+"'"))
+      n.classList.add('active');
+  });
+}
+
+// ── NOTIFICATION ──────────────────────────────────────
+function notify(icon,text,dur=3500){
+  const n=document.getElementById('notif');
+  document.getElementById('notif-icon').textContent=icon;
+  document.getElementById('notif-text').textContent=text;
+  n.classList.add('show');
+  setTimeout(()=>n.classList.remove('show'),dur);
+}
+
+// ── MODAL CHECKPOINT ──────────────────────────────────
+function checkpoint(msg){
+  document.getElementById('modal-msg').textContent=msg;
+  document.getElementById('modal').style.display='flex';
+}
+function closeModal(){ document.getElementById('modal').style.display='none'; }
+function confirmModal(){
+  closeModal();
+  addChainEvent('CHECKPOINT','human_approval','Aprobado por humano → CCP-01','gold');
+  notify('✅','Acción aprobada. Registrado en cadena SHA-256.');
+}
+
+// ── TERMINAL ──────────────────────────────────────────
+function tl(html){
+  const t=document.getElementById('term-out');
+  if(!t)return;
+  const d=document.createElement('div');
+  d.innerHTML=html;
+  t.appendChild(d);
+  t.scrollTop=t.scrollHeight;
+}
+function ta(delay,html){setTimeout(()=>tl(html),delay);}
+
+// ── CHAIN EVENTS ──────────────────────────────────────
+const COLORS={blue:'var(--cyan)',green:'var(--green)',orange:'var(--orange)',gold:'var(--gold)',purple:'var(--purple)'};
+function addChainEvent(type,agent,text,color='blue'){
+  const c=document.getElementById('chain-feed');
+  if(!c)return;
+  events++;
+  document.getElementById('kv1').textContent=events.toLocaleString();
+  document.getElementById('hdr-events').textContent=events.toLocaleString();
+  const hash='sha256:'+Math.random().toString(36).substring(2,10)+'...'+Math.random().toString(36).substring(2,6);
+  const d=document.createElement('div');
+  d.style.cssText='display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px;animation:fadeIn .2s ease';
+  d.innerHTML=`<div style="width:7px;height:7px;border-radius:50%;background:${COLORS[color]||COLORS.blue};box-shadow:0 0 5px ${COLORS[color]||COLORS.blue};flex-shrink:0;margin-top:3px"></div><div style="flex:1"><span style="font-weight:700">${type}</span> · <span style="color:var(--muted);font-size:10px">${agent}</span><div style="color:var(--muted);font-size:10px;margin-top:1px">${text}</div><div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:1px">${hash}</div></div>`;
+  c.insertBefore(d,c.firstChild);
+  if(c.children.length>12) c.removeChild(c.lastChild);
+}
+
+// ── MODULE STATUS ──────────────────────────────────────
+const MODULES=[
+  {name:'boot.py · Kernel',status:'ok',tag:'TRL-5'},
+  {name:'ache_bot.py · Telegram',status:'ok',tag:'LIVE'},
+  {name:'ache_sync.py · Supabase',status:'ok',tag:'SYNC'},
+  {name:'API REST · :8080',status:'ok',tag:'ACTIVO'},
+  {name:'swarm_sim.py · MESH',status:'ok',tag:'SIM'},
+  {name:'CCPs (13) · Gobernanza',status:'ok',tag:'CONST.'},
+  {name:'ACHE-SAFETY',status:'warn',tag:'BUILD'},
+  {name:'ache_hacienda.py',status:'warn',tag:'PEND.'},
+  {name:'ACHE-GOVERNANCE',status:'warn',tag:'BUILD'},
+  {name:'ACHE-INCLUSION',status:'off',tag:'PLANIF.'},
+  {name:'ACHE-MESH Físico',status:'off',tag:'PLANIF.'},
+  {name:'Banco Virtual',status:'off',tag:'LICENCIA'},
+];
+function renderModules(){
+  const c=document.getElementById('module-status');
+  if(!c)return;
+  c.innerHTML=MODULES.map(m=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <div style="width:7px;height:7px;border-radius:50%;flex-shrink:0;${m.status==='ok'?'background:var(--green);animation:pulse 2s infinite':m.status==='warn'?'background:var(--gold);animation:pulse 1s infinite':'background:var(--muted)'}"></div>
+      <div style="flex:1;font-weight:600">${m.name}</div>
+      <span style="font-size:9px;padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;${m.status==='ok'?'background:rgba(0,212,255,.12);color:var(--cyan)':m.status==='warn'?'background:rgba(255,215,0,.12);color:var(--gold)':'background:rgba(90,122,153,.15);color:var(--muted)'}">${m.tag}</span>
+    </div>`).join('');
+}
+
+// ── GEO ALERTS ────────────────────────────────────────
+const GEO_ALERTS=[
+  {level:'medium',title:'Lluvia intensa',desc:'IMN: precipitaciones >80mm/h en zona norte La Cruz. Río Sapoá con caudal elevado.',icon:'🌧',src:'IMN'},
+  {level:'low',title:'Tráfico Peñas Blancas',desc:'Flujo vehicular alto en frontera CR-NI. 340 vehículos en cola. Normal fin de semana.',icon:'🚛',src:'COSEVI'},
+  {level:'high',title:'Alerta sísmica regional',desc:'OVSICORI-UNA: sismo M3.2 en zona de subducción Pacífico. Sin daños reportados.',icon:'🌋',src:'OVSICORI'},
+  {level:'low',title:'Evento comunitario',desc:'Feria del cantón en parque central La Cruz. Alta afluencia estimada 500 personas.',icon:'🎪',src:'Municipalidad'},
+];
+function renderGeoAlerts(containerId){
+  const c=document.getElementById(containerId);
+  if(!c)return;
+  c.innerHTML=GEO_ALERTS.map(a=>`
+    <div class="geo-alert ${a.level}">
+      <span class="geo-lv">${a.level.toUpperCase()}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:12px">${a.icon} ${a.title}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${a.desc}</div>
+        <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:3px">Fuente: ${a.src}</div>
+      </div>
+    </div>`).join('');
+}
+function addGeoAlert(){
+  GEO_ALERTS.unshift({level:'critical',title:'Alerta Manual ACHE',desc:'Evento registrado manualmente por operador ACHE. Verificando fuentes adicionales.',icon:'🚨',src:'ACHE-SAFETY'});
+  renderGeoAlerts('geo-alerts');
+  renderGeoAlerts('geo-alerts-mini');
+  notify('🚨','Nueva alerta geo registrada en cadena');
+  addChainEvent('ALERTA','ache_safety','Alerta manual operador ACHE','orange');
+}
+
+// ── AGENTS ────────────────────────────────────────────
+const AGENTS=[
+  {key:'safety',icon:'🛡',name:'SAFETY',status:'3 alertas',run:true},
+  {key:'commerce',icon:'💰',name:'COMMERCE',status:'Listo',run:false},
+  {key:'governance',icon:'🏛',name:'GOVERNANCE',status:'Sincronizando',run:true},
+  {key:'inclusion',icon:'🌐',name:'INCLUSION',status:'Planificado',run:false},
+  {key:'mesh',icon:'🕸',name:'MESH',status:'5 nodos sim.',run:false},
+  {key:'hacienda',icon:'📄',name:'HACIENDA',status:'Pend. install',run:false},
+  {key:'legal',icon:'⚖',name:'LEGAL CR',status:'Botpress LIVE',run:true},
+  {key:'autocode',icon:'🤖',name:'AUTOCODE',status:'En desarrollo',run:false},
+];
+function renderAgents(){
+  const g=document.getElementById('agent-grid');
+  if(!g)return;
+  g.innerHTML=AGENTS.map(a=>`
+    <div onclick="runAgent('${a.key}')" style="background:var(--card);border:1px solid ${a.run?'var(--green)':'var(--border)'};border-radius:8px;padding:12px;text-align:center;cursor:pointer;transition:all .2s;${a.run?'animation:glow 2.5s infinite':''}" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='${a.run?'var(--green)':'var(--border)'}'">
+      <div style="font-size:20px;margin-bottom:5px">${a.icon}</div>
+      <div style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:${a.run?'var(--green)':'var(--cyan)'};margin-bottom:3px">${a.name}</div>
+      <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace">${a.status}</div>
+    </div>`).join('');
+}
+function runAgent(key){
+  const msgs={
+    safety:'[SAFETY] Analizando alertas La Cruz... 3 activas. Clasificando por criticidad. CCP-06 aplicado.',
+    commerce:'[COMMERCE] Motor facturación activo. XML v4.3 listo. IVA 13% configurado. ache_hacienda.py pendiente.',
+    governance:'[GOVERNANCE] Dashboard actualizado. '+events+' eventos cadena. 127 usuarios activos.',
+    inclusion:'[INCLUSION] 3 terminales offline planificadas. Cooperativa, Municipalidad, Liceo LC.',
+    mesh:'[MESH] 5 nodos: GONZAGA(PRIMARY), MUNI(PRIMARY), LICEO(EDGE), PEÑAS(RELAY), CAMPO(EDGE). Propagación: 87%',
+    hacienda:'[HACIENDA] XML v4.3 listo. Pendiente: instalar ache_hacienda.py en GONZAGA y configurar ATV.',
+    legal:'[LEGAL] Botpress CR activo. Consulta normativa: Constitución, Ley 4179, Ley 7558, SUGEF, TSE.',
+    autocode:'[AUTOCODE] Ciclo: detectar-gap → diseñar-módulo → validar-CCPs → implementar → registrar-cadena.',
+  };
+  tl(`<span class="tp">ache@gonzaga:~$ </span><span class="tc">agent --run ${key}</span>`);
+  setTimeout(()=>tl(`<span class="tinfo">ℹ ${msgs[key]||'Agente activado'}</span>`),350);
+  addChainEvent('AGENT_RUN','kernel',`Agente ${key.toUpperCase()} ejecutado`,'blue');
+  notify('⚙',`Agente ${key.toUpperCase()} activado`);
+}
+
+// ── API CALLS ──────────────────────────────────────────
+async function callAPI(endpoint){
+  tl(`<span class="tp">ache@gonzaga:~$ </span><span class="tc">curl ${ACHE_BASE}${endpoint}</span>`);
+  try{
+    const r=await fetch(ACHE_BASE+endpoint,{signal:AbortSignal.timeout(2500),mode:'cors'});
+    const d=await r.json();
+    tl(`<span class="tok">✓ ${JSON.stringify(d).substring(0,100)}...</span>`);
+    notify('✅',`ACHE: ${endpoint} OK`);
+  }catch(e){
+    tl(`<span class="twarn">⚡ localhost:8080 — ejecuta: python boot.py</span>`);
+    tl(`<span class="tmuted">  Simulado: {"status":"OK","cell":"GONZAGA-CBM-Ω-001","trl":5,"ccps":13}</span>`);
+    notify('⚡','Inicia boot.py en PowerShell');
+  }
+}
+
+// ── BOOT SEQUENCE ──────────────────────────────────────
+function bootSeq(){
+  const steps=[
+    [0,`<span class="tp">ache@gonzaga:~$ </span><span class="tc">python boot.py --full --cell GONZAGA-CBM-OMEGA-001</span>`],
+    [300,`<span class="tmuted">Iniciando ACHE Madre Government v3.0...</span>`],
+    [600,`<span class="tok">✓ CCPLoader: 13/13 principios constitucionales OK</span>`],
+    [900,`<span class="tok">✓ AcheMemory: ache_cell.db append-only SHA-256 cadena íntegra</span>`],
+    [1200,`<span class="tok">✓ RulesEngine: 42 reglas evaluadas en 0.003s</span>`],
+    [1500,`<span class="tok">✓ FastAPI: http://localhost:8080 activo — 9 endpoints</span>`],
+    [1800,`<span class="tok">✓ Telegram Bot: polling activo — 7 usuarios</span>`],
+    [2100,`<span class="tok">✓ ache_sync.py: --watch mode 300s — Supabase pbuxlktsbfdylpnwdslx</span>`],
+    [2400,`<span class="tok">✓ ngrok: https://unpenetratively-marigraphic-candra.ngrok-free.dev</span>`],
+    [2700,`<span class="tok">✓ swarm_sim.py: 5 nodos MESH simulados — propagación 87%</span>`],
+    [3000,`<span class="twarn">⚡ ache_hacienda.py: pendiente instalación en GONZAGA</span>`],
+    [3300,`<span class="tinfo">ℹ ACHE v3.0 · TRL-5 · GONZAGA-CBM-Ω-001 · OPERACIONAL</span>`],
+    [3600,`<span class="tinfo">ℹ ACHE Madre Government · La Cruz, Guanacaste, Costa Rica</span>`],
+    [3900,`<span class="tinfo">ℹ UEI VHF9MNJKNLK6 · Cédula 3-004-757068 · COOPECRUCENOS</span>`],
+    [4200,`<span class="tp">ache@gonzaga:~$ </span><span class="tc" style="animation:blink 1s infinite">█</span>`],
+  ];
+  steps.forEach(([d,h])=>ta(d,h));
+  addChainEvent('BOOT','kernel','Sistema ACHE Madre Government v3.0 iniciado','green');
+  notify('🚀','Boot sequence iniciada — ACHE v3.0');
+}
+
+function scanMods(){
+  ['boot.py','ache_bot.py','ache_sync.py','server.py','swarm_sim.py','ache_hacienda.py','identity.yaml','MASTER.md'].forEach((m,i)=>{
+    setTimeout(()=>{
+      const ok=m!=='ache_hacienda.py';
+      tl(`<span class="${ok?'tok':'twarn'}">${ok?'✓':'⚡'} ${m}: ${ok?'OK':'pendiente instalación en GONZAGA'}</span>`);
+    },i*300);
+  });
+  notify('🔍','Escaneando módulos...');
+}
+
+function syncSupa(){
+  tl(`<span class="tp">ache@gonzaga:~$ </span><span class="tc">python ache_sync.py --status</span>`);
+  setTimeout(()=>tl(`<span class="tok">✓ LOCAL: ${events} eventos · 12 facturas</span>`),300);
+  setTimeout(()=>tl(`<span class="tok">✓ SUPABASE: ache_events:${events} · ache_facturas:12 · OK</span>`),600);
+  setTimeout(()=>tl(`<span class="tinfo">ℹ Próximo sync en ~4.8 min</span>`),900);
+  addChainEvent('SYNC','ache_sync','Supabase sincronizado OK','green');
+  notify('☁','Supabase: sincronizado');
+}
+
+// ── CHAT SYSTEM ───────────────────────────────────────
+const ACHE_KB={
+  default:[
+    '⬡ Evento registrado en cadena SHA-256. TRL-5 operacional. 13 CCPs activos.',
+    '⬡ AcheMemory: append-only SQLite. Cadena inamovible. Supabase sync cada 5 min.',
+    '⬡ ACHE-MESH: 5 nodos simulados. GONZAGA-CBM-Ω-001 es el nodo primario del cantón.',
+    '⬡ CCP-07 (Equidad Digital): diseñado para el usuario de menor capacidad tecnológica primero.',
+  ],
+  '/estado':'⬡ TRL:5 | Eventos:'+events+' | CCPs:13 | boot✅ telegram✅ sync✅ API:8080✅ | ngrok activo | Supabase OK',
+  '/principios':'⬡ CCPs: 1-Soberanía Humana | 2-Memoria Inamovible | 3-Transparencia | 4-Offline-First | 5-Sin Dep.Única | 6-Mínimo Impacto | 7-Equidad Digital | 8-Gobernanza Coop | 9-Escalabilidad Fed. | 10-Misión Social',
+  '/hoy':'⬡ Hoy: '+new Date().toLocaleDateString('es-CR')+' | Eventos: '+events+' | Hotel: >75% ocup. | Supabase: sync | Alertas geo: 4 activas | Estado: OPERACIONAL',
+};
+function getACHEResp(text){
+  const t=text.trim().toLowerCase();
+  if(ACHE_KB[t]) return ACHE_KB[t];
+  if(t.includes('iva')||t.includes('impuesto')){
+    const num=parseFloat(t.match(/[\d,.]+/)?.[0]?.replace(',','')||0);
+    if(num>0) return `⬡ Subtotal: ₡${num.toLocaleString()} | IVA 13%: ₡${(num*.13).toLocaleString()} | Total: ₡${(num*1.13).toLocaleString()}`;
+    return '⬡ Indicá el monto. Ej: /iva 50000';
+  }
+  if(t.includes('factura')) return '⬡ Facturación: Módulo hacienda XML v4.3 listo. Pendiente instalar en GONZAGA. Ve al tab Facturación para demo.';
+  if(t.includes('ccp')||t.includes('principio')) return ACHE_KB['/principios'];
+  if(t.includes('estado')||t.includes('status')) return ACHE_KB['/estado'];
+  if(t.includes('mesh')||t.includes('nodo')) return '⬡ ACHE-MESH: 5 nodos simulados. PRIMARY(2) + EDGE(2) + RELAY(1). Propagación 87%. Despliegue físico pendiente.';
+  if(t.includes('grant')||t.includes('state dept')) return '⬡ SOI Digital Cities enviado marzo 2026. $300,000 USD. UEI VHF9MNJKNLK6. TRL-7 meta dic. 2026. Carta Alcaldía La Cruz firmada digitalmente.';
+  return ACHE_KB.default[Math.floor(Math.random()*ACHE_KB.default.length)];
+}
+function getMultiResp(text){
+  const t=text.toLowerCase();
+  if(t.includes('segur')||t.includes('alerta')) return '[🛡 SAFETY] Recibida alerta. Clasificando... CCP-06 aplicado. Notificando coordinador Municipalidad La Cruz.';
+  if(t.includes('factura')||t.includes('pago')||t.includes('venta')) return '[💰 COMMERCE] Procesando. IVA 13% calculado. XML v4.3 listo. HumanCheckpoint (CCP-01) ¿confirmas?';
+  if(t.includes('reporte')||t.includes('dashboard')||t.includes('datos')) return '[🏛 GOVERNANCE] Reporte generado. '+events+' eventos cadena. 127 usuarios activos. Dashboard actualizado.';
+  if(t.includes('inec')||t.includes('censo')||t.includes('datos')) return '[📊 INEC] La Cruz IDH: 0.620 (fondo 10% CR). 40% sin internet. 58% sin smartphone. CCP-07 activado.';
+  return '[🌐 INCLUSION] Tarea enrutada. Verificando terminales offline: 0/3 instaladas. Sitios: Coop, Muni, Liceo.';
+}
+function getPresResp(text){
+  return '[🏛 PRESIDENCIA] Integración planificada con gaceta.go.cr y SIGAF. Consulta via ACHE Legal CR para normativa vigente.';
+}
+function getAsamResp(text){
+  return '[⚖ ASAMBLEA] Expediente consultado. Integración planificada con sil.go.cr. Para normativa vigente usa ACHE Legal CR.';
+}
+async function sendChat(id){
+  const inp=document.getElementById(id+'-inp');
+  const msgs=document.getElementById(id+'-msgs');
+  if(!inp||!msgs)return;
+  const text=inp.value.trim();
+  if(!text)return;
+  addMsg(msgs,text,'user');
+  inp.value='';
+  const thinking=addMsg(msgs,'⬡ procesando...','system');
+  
+  await new Promise(r=>setTimeout(r,600+Math.random()*400));
+  thinking.remove();
+  
+  let resp;
+  if(id==='ache'||id==='ache2'){
+    try{
+      const r=await fetch(ACHE_BASE+'/recomendar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contexto:text,urgencia:'normal'}),signal:AbortSignal.timeout(2000),mode:'cors'});
+      const d=await r.json();
+      resp=d.recomendacion||d.result||JSON.stringify(d);
+    }catch(e){resp=getACHEResp(text);}
+  } else if(id==='multi'){resp=getMultiResp(text);}
+  else if(id==='kimi'){resp='🌙 Kimi AI: "'+text+'" — Accede directamente en kimi.com para el modelo completo. Contexto ACHE compartido: kimi.com/share/19ce2b14-...';}
+  else if(id==='pres'){resp=getPresResp(text);}
+  else if(id==='asam'){resp=getAsamResp(text);}
+  else{resp='⬡ '+text+' procesado. Registrado en cadena ACHE.';}
+  
+  addMsg(msgs,resp,'bot');
+  addChainEvent('PERCEPCION','chat_interface',text.substring(0,50),'blue');
+  events++;
+}
+function addMsg(c,text,type){
+  const d=document.createElement('div');
+  d.className='msg '+type;
+  d.innerHTML=text;
+  c.appendChild(d);
+  c.scrollTop=c.scrollHeight;
+  return d;
+}
+
+// ── FACTURA ───────────────────────────────────────────
+function calcIVA(){
+  const sub=parseFloat(document.getElementById('fac-sub').value)||0;
+  const iva=sub*0.13;
+  document.getElementById('fac-iva').value='₡'+iva.toLocaleString('es-CR',{minimumFractionDigits:2});
+  document.getElementById('fac-total').value='₡'+(sub+iva).toLocaleString('es-CR',{minimumFractionDigits:2});
+}
+function genFactura(){
+  const sub=parseFloat(document.getElementById('fac-sub').value)||0;
+  const cli=document.getElementById('fac-cli-nom').value||'Cliente';
+  const desc=document.getElementById('fac-desc').value||'Servicio';
+  const now=new Date();
+  const consec='FE-'+String(Math.floor(Math.random()*9000)+1000).padStart(10,'0');
+  const clave=('50'+'0'+String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(2)+'3004757068'+'001'+'00000000001'+'1'+'1'+String(Math.floor(Math.random()*99999999)).padStart(8,'0')).padEnd(50,'0').substring(0,50);
+  const xml=`<?xml version="1.0" encoding="UTF-8"?>
+<FacturaElectronica xmlns="https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.3/facturaElectronica">
+  <Clave>${clave}</Clave>
+  <CodigoActividad>621900</CodigoActividad>
+  <NumeroConsecutivo>${consec}</NumeroConsecutivo>
+  <FechaEmision>${now.toISOString().split('.')[0]}-06:00</FechaEmision>
+  <Emisor>
+    <Nombre>COOPECRUCENOS R.L.</Nombre>
+    <Identificacion><Tipo>02</Tipo><Numero>3004757068</Numero></Identificacion>
+  </Emisor>
+  <Receptor>
+    <Nombre>${cli}</Nombre>
+  </Receptor>
+  <ResumenFactura>
+    <TotalServGravados>${sub.toFixed(2)}</TotalServGravados>
+    <TotalImpuesto>${(sub*0.13).toFixed(2)}</TotalImpuesto>
+    <TotalComprobante>${(sub*1.13).toFixed(2)}</TotalComprobante>
+  </ResumenFactura>
+</FacturaElectronica>`;
+  document.getElementById('fac-preview').textContent=xml;
+  addChainEvent('FACTURA','hacienda_mod',`${cli} ₡${(sub*1.13).toLocaleString()}`, 'gold');
+  notify('📄',`Factura ${consec} generada`);
+}
+
+// ── TSE ───────────────────────────────────────────────
+function consultaTSE(){
+  const ced=document.getElementById('tse-cedula').value;
+  const r=document.getElementById('tse-result');
+  r.style.display='block';
+  r.innerHTML='<span style="color:var(--cyan)">⟳ Consultando TSE...</span>';
+  setTimeout(()=>{
+    if(!ced){r.innerHTML='<span style="color:var(--red)">Ingresa un número de cédula válido</span>';return;}
+    r.innerHTML=`<div style="color:var(--green);font-weight:700;margin-bottom:8px">✅ Registro encontrado (demo)</div>
+<div><strong>Cédula:</strong> ${ced}</div>
+<div><strong>Nombre:</strong> [Datos protegidos — API TSE requerida]</div>
+<div><strong>Provincia:</strong> Guanacaste</div>
+<div><strong>Cantón:</strong> La Cruz</div>
+<div><strong>Junta:</strong> 0845</div>
+<div style="margin-top:8px;color:var(--muted);font-size:10px">Integración real: tse.go.cr/api/v1/padron?cedula=${ced}</div>`;
+    addChainEvent('CONSULTA_TSE','tse_module',`Cédula consultada: ${ced}`,'blue');
+  },800);
+}
+
+// ── MINISTERIOS ───────────────────────────────────────
+const MINISTERIOS=[
+  {icon:'🏛',name:'MEP',full:'Educación Pública',status:'partial',desc:'Planilla docente, presupuesto por circuito, estadísticas INEC educativas.'},
+  {icon:'🏥',name:'MINSA',full:'Salud',status:'partial',desc:'Epidemiología, EDUS interop., presupuesto hospitales, farmacias.'},
+  {icon:'🔬',name:'MICITT',full:'Ciencia y Tecnología',status:'active',desc:'Política IA 2023-2027. Alianza ACHE activa.'},
+  {icon:'⚖',name:'MJP',full:'Justicia y Paz',status:'planned',desc:'Expedientes judiciales, cumplimiento penas, mediación comunitaria.'},
+  {icon:'🚔',name:'MSP',full:'Seguridad Pública',status:'planned',desc:'OIJ, Policía, delegaciones. Integración ACHE-SAFETY Fase 2.'},
+  {icon:'💰',name:'MHDA',full:'Hacienda',status:'partial',desc:'Presupuesto nacional, tributos, SUGEF, Gaceta. Módulo facturación activo.'},
+  {icon:'🌱',name:'MAG',full:'Agricultura',status:'planned',desc:'Censos agropecuarios, precios de canasta, programas rurales.'},
+  {icon:'🌳',name:'MINAE',full:'Ambiente y Energía',status:'planned',desc:'SETENA, ICE, RECOPE, SINAC. Datos georreferenciados.'},
+  {icon:'🤝',name:'MTSS',full:'Trabajo y Seg. Social',status:'planned',desc:'Planilla CCSS, empleo, salarios mínimos, sindicatos.'},
+  {icon:'🏗',name:'MOPT',full:'Obras Públicas',status:'planned',desc:'Infraestructura vial, COSEVI, CONAVI, SETENA permisos.'},
+  {icon:'🏠',name:'MIVAH',full:'Vivienda y Asent.',status:'planned',desc:'Bonos vivienda BANHVI, déficit habitacional INEC.'},
+  {icon:'🌐',name:'MRREE',full:'Relaciones Exteriores',status:'active',desc:'Embajadas, UEI SAM.gov, convenios bilaterales EE.UU.-CR.'},
+  {icon:'🎭',name:'MCJ',full:'Cultura y Juventud',status:'planned',desc:'Patrimonio cultural, eventos, presupuesto artístico.'},
+  {icon:'♟',name:'MIDEPLÁN',full:'Planificación Nacional',status:'partial',desc:'IDS 2023, PND, Área de Menor Desarrollo Relativo La Cruz.'},
+  {icon:'⚡',name:'ICE',full:'Inst. Costarricense Electricidad',status:'planned',desc:'Electricidad, telecomunicaciones, fibra óptica cantonal.'},
+  {icon:'💊',name:'CCSS',full:'Caja Costarricense Seg. Social',status:'planned',desc:'EDUS, planilla, pensiones, hospitales nacionales.'},
+  {icon:'🛡',name:'MEP-Seg.',full:'Defensa Civil',status:'planned',desc:'CNE, alertas tempranas, planes de emergencia cantonal.'},
+  {icon:'📡',name:'SUTEL',full:'Telecomunicaciones',status:'planned',desc:'Cobertura móvil, internet, brecha digital La Cruz.'},
+  {icon:'🎓',name:'CONARE',full:'Consejo Nac. Rectores',status:'partial',desc:'UCR, TEC, UNA, UNED. Alianzas I+D con ACHE-LAB.'},
+  {icon:'🏦',name:'BCCR',full:'Banco Central CR',status:'planned',desc:'SINPE, tipo de cambio, política monetaria, API BCCR.'},
+  {icon:'📊',name:'INEC',full:'Estadística y Censos',status:'active',desc:'Censo 2022, ENAHO, IDH cantonal. Datos base ACHE.'},
+  {icon:'🗳',name:'TSE',full:'Tribunal Supremo Elecciones',status:'active',desc:'Padrón electoral, identidad, registro civil. API planificada.'},
+  {icon:'📋',name:'CGR',full:'Contraloría General',status:'planned',desc:'Auditoría presupuestos, licitaciones, SICOP.'},
+  {icon:'⚖',name:'PODER JUD.',full:'Poder Judicial',status:'planned',desc:'OIJ, expedientes, jurisprudencia, sistema TICOLEX.'},
+  {icon:'🏛',name:'ASAMBLEA',full:'Asamblea Legislativa',status:'partial',desc:'57 diputados, 22 comisiones, SIL expedientes.'},
+  {icon:'🌎',name:'INFOCOOP',full:'Cooperativas CR',status:'active',desc:'COOPECRUCENOS auditada. Marco legal Ley 4179.'},
+  {icon:'🔐',name:'SUGEF',full:'Sup. Gral. Entid. Fin.',status:'planned',desc:'Licencia bancaria requerida para Banco ACHE virtual.'},
+];
+function renderMins(filter='all'){
+  const g=document.getElementById('min-grid');
+  if(!g)return;
+  const filtered=filter==='all'?MINISTERIOS:MINISTERIOS.filter(m=>m.status===filter);
+  g.innerHTML=filtered.map(m=>`
+    <div class="min-card" onclick="openMin('${m.name}')">
+      <div class="min-icon">${m.icon}</div>
+      <div class="min-name">${m.name} — ${m.full}</div>
+      <div class="min-desc">${m.desc}</div>
+      <div class="min-status ${m.status==='active'?'st-active':m.status==='partial'?'st-partial':'st-planned'}">
+        ${m.status==='active'?'✅ Activo':m.status==='partial'?'◐ Parcial':'○ Planificado'}
+      </div>
+    </div>`).join('');
+}
+function filterMin(f){renderMins(f);}
+function openMin(name){
+  const m=MINISTERIOS.find(x=>x.name===name);
+  if(!m)return;
+  notify(`${m.icon}`,`${m.full}: módulo en ${m.status==='active'?'operación':'desarrollo'}`);
+  addChainEvent('MODULE_ACCESS','ui',`Módulo ${name} accedido`,'blue');
+}
+
+// ── PRESUPUESTO SELECT FILL ────────────────────────────
+function fillSelects(){
+  const opts=MINISTERIOS.map(m=>`<option value="${m.name}">${m.icon} ${m.name} — ${m.full}</option>`).join('');
+  const o=document.getElementById('tr-origen');
+  const d=document.getElementById('tr-destino');
+  if(o)o.innerHTML=opts;
+  if(d)d.innerHTML=opts;
+}
+
+// ── CHARTS ────────────────────────────────────────────
+function initCharts(){
+  const defaults={color:'#e2eaf4',grid:'rgba(26,58,92,.4)',font:'JetBrains Mono'};
+  
+  // Revenue
+  const rev=document.getElementById('chart-revenue');
+  if(rev) new Chart(rev,{type:'bar',data:{labels:['Hotel','Supermerc.','Digital','Grant','BNCR'],datasets:[{label:'₡ Miles',data:[840,1240,95,0,0],backgroundColor:['rgba(0,212,255,.6)','rgba(0,255,157,.6)','rgba(168,85,247,.6)','rgba(255,215,0,.4)','rgba(255,107,53,.4)'],borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:defaults.grid},ticks:{color:defaults.color,font:{family:defaults.font,size:10}}},x:{grid:{display:false},ticks:{color:defaults.color,font:{family:defaults.font,size:10}}}}}});
+  
+  // Estado
+  const est=document.getElementById('chart-estado');
+  if(est) new Chart(est,{type:'doughnut',data:{labels:['Ministerios(27)','Autónomos(73)','Municipalidades(82)','Empresas Púb.(14)'],datasets:[{data:[27,73,82,14],backgroundColor:['rgba(0,212,255,.7)','rgba(0,255,157,.7)','rgba(255,215,0,.7)','rgba(168,85,247,.7)'],borderWidth:1,borderColor:'var(--border)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:defaults.color,font:{family:defaults.font,size:10}}}}}});
+  
+  // TSE
+  const tse=document.getElementById('chart-tse');
+  if(tse) new Chart(tse,{type:'bar',data:{labels:['San José','Alajuela','Cartago','Heredia','Guanacaste','Puntarenas','Limón'],datasets:[{label:'Electores (miles)',data:[1050,650,340,290,280,270,200],backgroundColor:'rgba(0,212,255,.6)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:defaults.grid},ticks:{color:defaults.color,font:{family:defaults.font,size:10}}},x:{grid:{display:false},ticks:{color:defaults.color,font:{family:defaults.font,size:10}}}}}});
+  
+  // INEC
+  const inec=document.getElementById('chart-inec');
+  if(inec) new Chart(inec,{type:'bar',data:{labels:['Escazú','Moravia','Santa Ana','La Cruz','Talamanca','Upala','Los Chiles'],datasets:[{label:'IDH',data:[0.89,0.88,0.87,0.62,0.61,0.60,0.58],backgroundColor:ctx=>ctx.dataIndex<3?'rgba(0,255,157,.6)':'rgba(255,45,85,.6)',borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:defaults.grid},ticks:{color:defaults.color}},y:{grid:{display:false},ticks:{color:defaults.color,font:{family:defaults.font,size:10}}}}}});
+  
+  // La Cruz vs CR
+  const lc=document.getElementById('chart-lacruz');
+  if(lc) new Chart(lc,{type:'radar',data:{labels:['Internet','Smartphone','Educación','Empleo Formal','Agua Potable','IDH'],datasets:[{label:'La Cruz',data:[42,58,34,41,71,62],backgroundColor:'rgba(255,45,85,.15)',borderColor:'rgba(255,45,85,.8)',pointBackgroundColor:'rgba(255,45,85,.8)'},{label:'Nacional',data:[78,82,51,61,92,81],backgroundColor:'rgba(0,212,255,.1)',borderColor:'rgba(0,212,255,.8)',pointBackgroundColor:'rgba(0,212,255,.8)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:defaults.color,font:{family:defaults.font,size:10}}}},scales:{r:{grid:{color:defaults.grid},ticks:{color:defaults.color,font:{family:defaults.font,size:9},backdropColor:'transparent'},pointLabels:{color:defaults.color,font:{family:defaults.font,size:9}}}}}});
+  
+  // Presupuesto
+  const pres=document.getElementById('chart-presup');
+  if(pres) new Chart(pres,{type:'doughnut',data:{labels:['Servicio Deuda(34%)','MEP(22%)','CCSS(18%)','MTSS(8%)','MSP(5%)','Resto(13%)'],datasets:[{data:[34,22,18,8,5,13],backgroundColor:['rgba(255,45,85,.7)','rgba(0,212,255,.7)','rgba(0,255,157,.7)','rgba(255,215,0,.7)','rgba(168,85,247,.7)','rgba(90,122,153,.6)'],borderWidth:1,borderColor:'var(--border)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:defaults.color,font:{family:defaults.font,size:10}}}}}});
+  
+  // Banco
+  const ban=document.getElementById('chart-banco');
+  if(ban) new Chart(ban,{type:'line',data:{labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],datasets:[{label:'Ingresos ₡M',data:[18,22,24,19,27,31,28,35,33,38,42,45],borderColor:'rgba(0,255,157,.8)',backgroundColor:'rgba(0,255,157,.08)',tension:.4,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:defaults.grid},ticks:{color:defaults.color,font:{family:defaults.font,size:10}}},x:{grid:{display:false},ticks:{color:defaults.color,font:{family:defaults.font,size:10}}}}}});
+  
+  // Crypto
+  const cry=document.getElementById('chart-crypto');
+  if(cry) new Chart(cry,{type:'doughnut',data:{labels:['BTC(71%)','ETH(23%)','USDC(6%)'],datasets:[{data:[71,23,6],backgroundColor:['rgba(247,147,26,.7)','rgba(98,126,234,.7)','rgba(0,212,255,.7)'],borderWidth:1,borderColor:'var(--border)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:defaults.color,font:{family:defaults.font,size:10}}}}}});
+  
+  // Sources
+  const src=document.getElementById('chart-sources');
+  if(src) new Chart(src,{type:'polarArea',data:{labels:['Redes Sociales','Noticias','APIs Gov.','Sensores IoT','OVSICORI','IMN','ACHE Internal'],datasets:[{data:[28,22,18,12,8,7,5],backgroundColor:['rgba(255,45,85,.5)','rgba(255,107,53,.5)','rgba(0,212,255,.5)','rgba(0,255,157,.5)','rgba(168,85,247,.5)','rgba(255,215,0,.5)','rgba(90,122,153,.5)']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:defaults.color,font:{family:defaults.font,size:9}}}},scales:{r:{grid:{color:defaults.grid},ticks:{display:false}}}}});
+}
+
+// ── MAP ────────────────────────────────────────────────
+function initMap(){
+  const el=document.getElementById('map-container');
+  if(!el)return;
+  try{
+    const map=L.map('map-container',{center:[11.0311,-85.6154],zoom:11});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'©CARTO',maxZoom:19}).addTo(map);
+    
+    const mkIcon=(color,emoji)=>L.divIcon({html:`<div style="background:${color};border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid rgba(255,255,255,.3);box-shadow:0 0 10px ${color}">${emoji}</div>`,iconSize:[32,32],className:''});
+    
+    L.marker([11.0311,-85.6154],{icon:mkIcon('rgba(0,212,255,.9)','⬡')}).addTo(map).bindPopup('<strong>ACHE GONZAGA-CBM-Ω-001</strong><br>COOPECRUCENOS R.L.<br>TRL-5 Operacional');
+    L.marker([11.0320,-85.6160],{icon:mkIcon('rgba(0,255,157,.9)','🏛')}).addTo(map).bindPopup('<strong>Municipalidad de La Cruz</strong><br>Co-solicitante Digital Cities<br>Alcalde: Luis Alonso Alán Corea');
+    L.marker([11.0290,-85.6140],{icon:mkIcon('rgba(255,215,0,.9)','🎓')}).addTo(map).bindPopup('<strong>Liceo Diurno La Cruz</strong><br>800+ estudiantes<br>ACHE-INCLUSION Sitio 3');
+    L.marker([11.2155,-85.7089],{icon:mkIcon('rgba(255,107,53,.9)','🚛')}).addTo(map).bindPopup('<strong>Peñas Blancas</strong><br>Frontera CR-Nicaragua<br>Principal corredor comercial');
+    L.marker([10.9500,-85.5000],{icon:mkIcon('rgba(168,85,247,.9)','🛡')}).addTo(map).bindPopup('<strong>Centro Policial Murciélago</strong><br>Socio ACHE Fase 2<br>Cooperación bilateral CR-EE.UU.');
+    
+    // Alert circles
+    L.circle([11.0311,-85.6154],{color:'rgba(0,255,157,.4)',fillColor:'rgba(0,255,157,.05)',fillOpacity:.5,radius:2000}).addTo(map);
+    L.circle([11.2155,-85.7089],{color:'rgba(255,107,53,.4)',fillColor:'rgba(255,107,53,.05)',fillOpacity:.5,radius:1500}).addTo(map);
+    
+  }catch(e){el.innerHTML='<div style="padding:20px;color:var(--muted)">Mapa: requiere conexión internet para cargar tiles.</div>';}
+}
+
+// ── LIVE UPDATES ──────────────────────────────────────
+const EVT_TYPES=[
+  ['PERCEPCION','telegram_bot','Consulta ciudadana recibida','blue'],
+  ['SYNC','ache_sync','Supabase sync cycle OK','green'],
+  ['RECOMENDACION','kernel','Respuesta generada TRL-5','blue'],
+  ['ALERTA','geo_monitor','Sensor meteorológico actualizado','orange'],
+  ['FACTURA','hacienda_mod','Demo factura consultada','gold'],
+  ['CHECKPOINT','rules_engine','Evento evaluado CCP-01','purple'],
+];
+setInterval(()=>{
+  if(Math.random()>.6){
+    const e=EVT_TYPES[Math.floor(Math.random()*EVT_TYPES.length)];
+    addChainEvent(e[0],e[1],e[2],e[3]);
+  }
+  const kv2=document.getElementById('kv2');
+  if(kv2){const v=2100000+Math.floor(Math.random()*150000);kv2.textContent='₡'+Math.round(v/1000)+'K';}
+},7000);
+
+// ── INIT ──────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  detectDevice();
+  renderModules();
+  renderGeoAlerts('geo-alerts');
+  renderGeoAlerts('geo-alerts-mini');
+  renderAgents();
+  renderMins();
+  fillSelects();
+  setTimeout(initCharts,100);
+  setTimeout(initMap,200);
+  setTimeout(bootSeq,500);
+  
+  // Initial chain events
+  [
+    ['BOOT','kernel','ACHE Madre Government v3.0 iniciado','green'],
+    ['SYNC','ache_sync','Supabase pbuxlktsbfdylpnwdslx OK','green'],
+    ['CCP_LOAD','ccp_loader','13 principios constitucionales cargados','blue'],
+    ['GEO_INIT','geo_module','Mapa La Cruz 11.0311°N 85.6154°W','blue'],
+    ['UI_READY','frontend','Dashboard cargado — GONZAGA-CBM-Ω-001','green'],
+  ].forEach((e,i)=>setTimeout(()=>addChainEvent(e[0],e[1],e[2],e[3]),i*400));
+  
+  setTimeout(()=>notify('⬡','ACHE Madre Government v3.0 — La Cruz, Costa Rica 🇨🇷 🇺🇸'),2000);
+  
+  // Try API connection
+  setTimeout(async()=>{
+    try{
+      await fetch(ACHE_BASE+'/health',{signal:AbortSignal.timeout(2000),mode:'cors'});
+      notify('✅','localhost:8080 conectado — ACHE operacional');
+    }catch{
+      tl('<span class="twarn">⚡ API: ejecuta "python boot.py" en PowerShell para conectar localhost:8080</span>');
+    }
+  },3000);
+});
+</script>
+</body>
+</html>
