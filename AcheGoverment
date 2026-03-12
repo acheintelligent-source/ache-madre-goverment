@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACHE MADRE — Plataforma de Gobernanza Costa Rica</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --black: #030508;
+  --deep: #050c14;
+  --surface: #0a1628;
+  --card: #0d1f35;
+  --border: #1a3050;
+  --accent1: #00d4ff;
+  --accent2: #00ff9d;
+  --accent3: #ff6b35;
+  --gold: #ffd700;
+  --red: #ff2d55;
+  --purple: #a855f7;
+  --text: #e2eaf4;
+  --muted: #5a7a99;
+  --glow1: rgba(0,212,255,0.15);
+  --glow2: rgba(0,255,157,0.1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--black);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* GRID BACKGROUND */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* SCAN LINE */
+body::after {
+  content: '';
+  position: fixed;
+  top: -100%;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(transparent, rgba(0,212,255,0.04), transparent);
+  animation: scan 8s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes scan { to { top: 100%; } }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+@keyframes glow { 0%,100%{box-shadow:0 0 10px var(--accent1)} 50%{box-shadow:0 0 30px var(--accent1), 0 0 60px rgba(0,212,255,0.3)} }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes countUp { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+
+/* ── HEADER ─────────────────────────────────── */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 64px;
+  background: rgba(3,5,8,0.95);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 1000;
+  backdrop-filter: blur(20px);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-hex {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--black);
+  animation: float 4s ease-in-out infinite;
+}
+
+.logo-text {
+  font-family: 'Orbitron', monospace;
+  font-weight: 800;
+  font-size: 18px;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 2px;
+}
+
+.logo-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border: 1px solid;
+  border-radius: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.status-pill.online { border-color: var(--accent2); color: var(--accent2); }
+.status-pill.warning { border-color: var(--gold); color: var(--gold); }
+
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.5s infinite; }
+
+.cell-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* ── SIDEBAR ─────────────────────────────────── */
+aside {
+  position: fixed;
+  top: 64px; left: 0; bottom: 0;
+  width: 220px;
+  background: rgba(5,12,20,0.98);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.nav-section {
+  padding: 16px 0 8px;
+}
+
+.nav-label {
+  padding: 0 20px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  position: relative;
+}
+
+.nav-item:hover { background: var(--glow1); color: var(--accent1); }
+.nav-item.active {
+  border-left-color: var(--accent1);
+  background: var(--glow1);
+  color: var(--accent1);
+}
+
+.nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+.nav-badge {
+  margin-left: auto;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.badge-green { background: rgba(0,255,157,0.2); color: var(--accent2); }
+.badge-orange { background: rgba(255,107,53,0.2); color: var(--accent3); }
+.badge-blue { background: rgba(0,212,255,0.2); color: var(--accent1); }
+.badge-gold { background: rgba(255,215,0,0.2); color: var(--gold); }
+
+/* ── MAIN ─────────────────────────────────── */
+main {
+  margin-left: 220px;
+  margin-top: 64px;
+  min-height: calc(100vh - 64px);
+  position: relative;
+  z-index: 2;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeUp 0.3s ease; }
+
+/* ── DASHBOARD ─────────────────────────────── */
+.dashboard {
+  padding: 24px;
+}
+
+.dash-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.dash-heading {
+  font-family: 'Orbitron', monospace;
+  font-size: 28px;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--text), var(--accent1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 24px;
+}
+
+/* KPI GRID */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.kpi-card:hover { transform: translateY(-2px); }
+.kpi-card.blue:hover { border-color: var(--accent1); }
+.kpi-card.green:hover { border-color: var(--accent2); }
+.kpi-card.orange:hover { border-color: var(--accent3); }
+.kpi-card.gold:hover { border-color: var(--gold); }
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.kpi-card.blue::before { background: var(--accent1); }
+.kpi-card.green::before { background: var(--accent2); }
+.kpi-card.orange::before { background: var(--accent3); }
+.kpi-card.gold::before { background: var(--gold); }
+
+.kpi-label {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.kpi-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  animation: countUp 0.5s ease;
+}
+
+.kpi-card.blue .kpi-value { color: var(--accent1); }
+.kpi-card.green .kpi-value { color: var(--accent2); }
+.kpi-card.orange .kpi-value { color: var(--accent3); }
+.kpi-card.gold .kpi-value { color: var(--gold); }
+
+.kpi-sub { font-size: 12px; color: var(--muted); }
+.kpi-trend { font-size: 11px; margin-top: 6px; }
+.kpi-trend.up { color: var(--accent2); }
+.kpi-trend.down { color: var(--red); }
+
+/* MAIN GRID */
+.main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent1);
+  text-transform: uppercase;
+}
+
+.card-body { padding: 20px; }
+
+/* CHAIN EVENTS */
+.chain-event {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  animation: slideIn 0.3s ease;
+}
+
+.event-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.event-dot.green { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+.event-dot.blue { background: var(--accent1); box-shadow: 0 0 6px var(--accent1); }
+.event-dot.orange { background: var(--accent3); }
+.event-dot.gold { background: var(--gold); }
+
+.event-text { flex: 1; }
+.event-type { font-weight: 600; }
+.event-meta { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.event-hash { font-size: 9px; color: var(--muted); font-family: 'JetBrains Mono', monospace; letter-spacing: 1px; }
+
+/* MODULE STATUS */
+.module-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.module-item:last-child { border-bottom: none; }
+
+.mod-status {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mod-status.ok { background: var(--accent2); animation: pulse 2s infinite; }
+.mod-status.warn { background: var(--gold); animation: pulse 1s infinite; }
+.mod-status.off { background: var(--muted); }
+
+.mod-name { font-weight: 600; flex: 1; }
+.mod-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.mod-tag.trl5 { background: rgba(0,212,255,0.15); color: var(--accent1); }
+.mod-tag.building { background: rgba(255,215,0,0.15); color: var(--gold); }
+.mod-tag.planned { background: rgba(90,122,153,0.2); color: var(--muted); }
+
+/* ── AI HUB ─────────────────────────────────── */
+.ai-hub { padding: 24px; }
+
+.ai-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ai-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+  transition: border-color 0.2s;
+}
+
+.ai-card:hover { border-color: var(--accent1); }
+
+.ai-card-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-logo {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.ai-name { font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 600; }
+.ai-model { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+.ai-iframe-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-iframe-wrap iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: var(--surface);
+}
+
+.ai-chat-local {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+}
+
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-track { background: transparent; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.msg {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 90%;
+  animation: fadeUp 0.2s ease;
+}
+
+.msg.bot {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  align-self: flex-start;
+}
+
+.msg.user {
+  background: rgba(0,212,255,0.1);
+  border: 1px solid rgba(0,212,255,0.3);
+  align-self: flex-end;
+  color: var(--accent1);
+}
+
+.msg.thinking {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-style: italic;
+  align-self: flex-start;
+  font-size: 12px;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.chat-input:focus { border-color: var(--accent1); }
+.chat-input::placeholder { color: var(--muted); }
+
+.btn-send {
+  padding: 8px 14px;
+  background: var(--accent1);
+  color: var(--black);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  transition: opacity 0.2s;
+}
+
+.btn-send:hover { opacity: 0.8; }
+
+/* ── FINTECH ─────────────────────────────────── */
+.fintech { padding: 24px; }
+
+.fin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.fin-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* WALLET */
+.wallet-display {
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,157,0.05));
+  border-bottom: 1px solid var(--border);
+}
+
+.wallet-addr {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.wallet-balance-label { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+.wallet-balance {
+  font-family: 'Orbitron', monospace;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+.wallet-usd { font-size: 14px; color: var(--muted); }
+
+.crypto-list { padding: 16px 20px; }
+
+.crypto-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.crypto-row:last-child { border-bottom: none; }
+
+.crypto-icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.crypto-name { flex: 1; }
+.crypto-sym { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+.crypto-amount { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+.crypto-val { font-size: 11px; color: var(--muted); }
+
+/* PAYMENTS */
+.payment-form { padding: 20px; }
+
+.form-group { margin-bottom: 16px; }
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.form-input, .form-select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus, .form-select:focus { border-color: var(--accent1); }
+.form-select option { background: var(--card); }
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--accent1), var(--accent2));
+  color: var(--black);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+/* REVENUE ENGINE */
+.revenue-engine { padding: 24px; }
+
+.revenue-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.rev-source {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+
+.rev-icon { font-size: 28px; margin-bottom: 10px; }
+.rev-name { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 4px; letter-spacing: 1px; }
+.rev-amount { font-family: 'Orbitron', monospace; font-size: 22px; color: var(--accent2); font-weight: 700; }
+.rev-period { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+.rev-bar {
+  margin-top: 10px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rev-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2));
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* LEGAL BOT */
+.legal-hub { padding: 24px; }
+
+.legal-frame-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  height: 600px;
+}
+
+.legal-frame-wrap iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* AUTOPROGRAMMING */
+.auto-prog { padding: 24px; }
+
+.terminal {
+  background: #000;
+  border: 1px solid var(--accent2);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0,255,157,0.1);
+}
+
+.terminal-bar {
+  padding: 10px 16px;
+  background: rgba(0,255,157,0.05);
+  border-bottom: 1px solid var(--accent2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.term-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.terminal-body {
+  padding: 20px;
+  height: 400px;
+  overflow-y: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.term-line { animation: slideIn 0.3s ease; }
+.term-prompt { color: var(--accent2); }
+.term-cmd { color: var(--text); }
+.term-out { color: var(--muted); }
+.term-ok { color: var(--accent2); }
+.term-warn { color: var(--gold); }
+.term-err { color: var(--red); }
+.term-info { color: var(--accent1); }
+.cursor { animation: pulse 1s infinite; }
+
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.agent-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.agent-card:hover {
+  border-color: var(--accent1);
+  background: var(--glow1);
+  transform: translateY(-2px);
+}
+
+.agent-icon { font-size: 24px; margin-bottom: 8px; }
+.agent-name { font-size: 12px; font-weight: 600; color: var(--accent1); font-family: 'Orbitron', monospace; margin-bottom: 4px; }
+.agent-status { font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+.agent-card.running { border-color: var(--accent2); animation: glow 2s infinite; }
+.agent-card.running .agent-name { color: var(--accent2); }
+
+/* GOVT */
+.govt-hub { padding: 24px; }
+
+.ministry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.ministry-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ministry-card:hover {
+  border-color: var(--accent1);
+  transform: translateY(-2px);
+  background: var(--glow1);
+}
+
+.min-icon { font-size: 32px; margin-bottom: 10px; }
+.min-name { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 600; color: var(--accent1); margin-bottom: 6px; letter-spacing: 1px; }
+.min-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.min-status { margin-top: 10px; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+
+/* NOTIFICATION */
+.notif {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  background: var(--card);
+  border: 1px solid var(--accent2);
+  border-radius: 10px;
+  font-size: 13px;
+  z-index: 9999;
+  animation: slideIn 0.3s ease;
+  display: none;
+  max-width: 320px;
+  box-shadow: 0 4px 20px rgba(0,255,157,0.2);
+}
+
+.notif.show { display: flex; gap: 10px; align-items: center; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 480px;
+  width: 90%;
+  animation: fadeUp 0.3s ease;
+}
+
+.modal-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent1);
+  margin-bottom: 8px;
+}
+
+.modal-warning {
+  background: rgba(255,45,85,0.1);
+  border: 1px solid rgba(255,45,85,0.3);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--red);
+  margin: 16px 0;
+  line-height: 1.5;
+}
+
+.modal-info {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.modal-btns { display: flex; gap: 12px; }
+.btn-secondary {
+  flex: 1;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  transition: border-color 0.2s;
+}
+.btn-secondary:hover { border-color: var(--accent1); }
+
+.btn-danger {
+  flex: 1;
+  padding: 10px;
+  background: rgba(255,45,85,0.1);
+  border: 1px solid rgba(255,45,85,0.4);
+  border-radius: 8px;
+  color: var(--red);
+  cursor: pointer;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* RESPONSIVE */
+@media (max-width: 1400px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .ai-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+  aside { display: none; }
+  main { margin-left: 0; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .main-grid { grid-template-columns: 1fr; }
+  .ai-grid { grid-template-columns: 1fr; }
+  .fin-grid { grid-template-columns: 1fr; }
+  .ministry-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">
+    <div class="logo-hex">⬡</div>
+    <div>
+      <div class="logo-text">ACHE MADRE</div>
+      <div class="logo-sub">Plataforma de Gobernanza · Costa Rica</div>
+    </div>
+  </div>
+  <div class="header-status">
+    <div class="status-pill online"><div class="dot"></div>SISTEMA ACTIVO</div>
+    <div class="status-pill warning"><div class="dot"></div>TRL-5</div>
+    <div class="cell-id">GONZAGA-CBM-Ω-001 · localhost:8080</div>
+  </div>
+</header>
+
+<!-- ── SIDEBAR ── -->
+<aside>
+  <div class="nav-section">
+    <div class="nav-label">Sistema</div>
+    <div class="nav-item active" onclick="showTab('dashboard')">
+      <span class="icon">⬡</span> Dashboard
+      <span class="nav-badge badge-green">LIVE</span>
+    </div>
+    <div class="nav-item" onclick="showTab('modules')">
+      <span class="icon">◈</span> Módulos ACHE
+      <span class="nav-badge badge-blue">13</span>
+    </div>
+    <div class="nav-item" onclick="showTab('autoprog')">
+      <span class="icon">⚙</span> Autoprogramación
+      <span class="nav-badge badge-orange">BETA</span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Inteligencia</div>
+    <div class="nav-item" onclick="showTab('ai-hub')">
+      <span class="icon">🤖</span> Hub de IAs
+      <span class="nav-badge badge-blue">4</span>
+    </div>
+    <div class="nav-item" onclick="showTab('legal')">
+      <span class="icon">⚖</span> ACHE Legal CR
+      <span class="nav-badge badge-green">LIVE</span>
+    </div>
+    <div class="nav-item" onclick="showTab('government')">
+      <span class="icon">🏛</span> Gobierno CR
+      <span class="nav-badge badge-blue">27</span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Finanzas</div>
+    <div class="nav-item" onclick="showTabFintech('revenue')">
+      <span class="icon">📈</span> Motor Ingresos
+      <span class="nav-badge badge-gold">AUTO</span>
+    </div>
+    <div class="nav-item" onclick="showTabFintech('wallet')">
+      <span class="icon">💎</span> Crypto Wallet
+      <span class="nav-badge badge-orange">DEMO</span>
+    </div>
+    <div class="nav-item" onclick="showTabFintech('payments')">
+      <span class="icon">💳</span> Pagos / SINPE
+      <span class="nav-badge badge-orange">DEMO</span>
+    </div>
+    <div class="nav-item" onclick="showTabFintech('bank')">
+      <span class="icon">🏦</span> Banco ACHE
+      <span class="nav-badge badge-orange">DEMO</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<main>
+
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="tab-content active">
+<div class="dashboard">
+  <div class="dash-title">COOPECRUCENOS R.L. · Cédula 3-004-757068</div>
+  <div class="dash-heading">ACHE MADRE GOVERNMENT</div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Eventos en Cadena</div>
+      <div class="kpi-value" id="kpi-events">847</div>
+      <div class="kpi-sub">SHA-256 inamovibles</div>
+      <div class="kpi-trend up">↑ +12 últimas 24h</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-label">Ingresos Hoy</div>
+      <div class="kpi-value" id="kpi-revenue">₡284K</div>
+      <div class="kpi-sub">Cooperativa + Hotel + Merch.</div>
+      <div class="kpi-trend up">↑ +8.3% vs ayer</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-label">Ciudadanos Activos</div>
+      <div class="kpi-value" id="kpi-users">127</div>
+      <div class="kpi-sub">En 3 sitios piloto</div>
+      <div class="kpi-trend up">↑ +7 esta semana</div>
+    </div>
+    <div class="kpi-card gold">
+      <div class="kpi-label">TRL Global</div>
+      <div class="kpi-value">5 → 7</div>
+      <div class="kpi-sub">Meta: Dic. 2026</div>
+      <div class="kpi-trend up">↑ Digital Cities Grant</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">🔗 Cadena de Auditoría — Últimos Eventos</span>
+        <span style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace" id="chain-status">APPEND-ONLY · LIVE</span>
+      </div>
+      <div class="card-body" id="chain-events">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">◈ Estado de Módulos</span>
+      </div>
+      <div class="card-body">
+        <div class="module-item">
+          <div class="mod-status ok"></div>
+          <div class="mod-name">boot.py · Kernel</div>
+          <span class="mod-tag trl5">TRL-5</span>
+        </div>
+        <div class="module-item">
+          <div class="mod-status ok"></div>
+          <div class="mod-name">ache_bot.py · Telegram</div>
+          <span class="mod-tag trl5">LIVE</span>
+        </div>
+        <div class="module-item">
+          <div class="mod-status ok"></div>
+          <div class="mod-name">ache_sync.py · Supabase</div>
+          <span class="mod-tag trl5">SYNC</span>
+        </div>
+        <div class="module-item">
+          <div class="mod-status ok"></div>
+          <div class="mod-name">API REST · :8080</div>
+          <span class="mod-tag trl5">TRL-5</span>
+        </div>
+        <div class="module-item">
+          <div class="mod-status warn"></div>
+          <div class="mod-name">ACHE-SAFETY</div>
+          <span class="mod-tag building">BUILD</span>
+        </div>
+        <div class="module-item">
+          <div class="mod-status warn"></div>
+          <div class="mod-name">ache_hacienda.py</div>
+          <span class="mod-tag building">PENDIENTE</span>
+        </div>
+        <div class="module-item">
+          <div class="mod-status off"></div>
+          <div class="mod-name">ACHE-MESH (5 nodos)</div>
+          <span class="mod-tag planned">PLANIF.</span>
+        </div>
+        <div class="module-item">
+          <div class="mod-status off"></div>
+          <div class="mod-name">ACHE-INCLUSION</div>
+          <span class="mod-tag planned">PLANIF.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK ACTIONS -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+    <button class="btn-primary" onclick="callACHE('/health')">🔍 Health Check</button>
+    <button class="btn-primary" onclick="callACHE('/status')" style="background:linear-gradient(135deg,var(--accent2),#00cc7a)">📊 ACHE Status</button>
+    <button class="btn-primary" onclick="callACHE('/ccps')" style="background:linear-gradient(135deg,var(--accent3),#e55a2b)">📜 Ver CCPs</button>
+    <button class="btn-primary" onclick="showTab('autoprog')" style="background:linear-gradient(135deg,var(--purple),#7c3aed)">⚙ Autoprogramar</button>
+  </div>
+</div>
+</div>
+
+<!-- AI HUB -->
+<div id="tab-ai-hub" class="tab-content">
+<div class="ai-hub">
+  <div class="dash-title">Inteligencia Artificial</div>
+  <div class="dash-heading">HUB DE IAs — ACCESO DIRECTO</div>
+
+  <div class="ai-grid">
+    <!-- ACHE LOCAL -->
+    <div class="ai-card">
+      <div class="ai-card-header">
+        <div class="ai-logo" style="background:linear-gradient(135deg,#00d4ff,#00ff9d);color:#000">⬡</div>
+        <div>
+          <div class="ai-name">ACHE LOCAL</div>
+          <div class="ai-model">localhost:8080 · Ciclo Cognitivo Propio</div>
+        </div>
+        <div class="dot" style="margin-left:auto;background:var(--accent2);animation:pulse 1.5s infinite"></div>
+      </div>
+      <div class="ai-chat-local">
+        <div class="chat-messages" id="ache-msgs">
+          <div class="msg bot">⬡ <strong>ACHE v2.0 — GONZAGA-CBM-Ω-001</strong><br>Sistema operacional. TRL-5. 13 CCPs cargados. ¿En qué puedo ayudarte?</div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="ache-input" placeholder="Consulta a ACHE..." onkeydown="if(event.key==='Enter')sendACHE()">
+          <button class="btn-send" onclick="sendACHE()">→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTPRESS LEGAL CR -->
+    <div class="ai-card">
+      <div class="ai-card-header">
+        <div class="ai-logo" style="background:linear-gradient(135deg,#1a3050,#2e5fa3);color:#00d4ff;font-size:12px;font-weight:900">CR</div>
+        <div>
+          <div class="ai-name">ACHE LEGAL CR</div>
+          <div class="ai-model">Botpress · Normativa Institucional Costa Rica</div>
+        </div>
+        <div class="dot" style="margin-left:auto;background:var(--accent2);animation:pulse 1.5s infinite"></div>
+      </div>
+      <div class="ai-iframe-wrap">
+        <iframe
+          src="https://cdn.botpress.cloud/webchat/v3.6/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/07/15/20260307154405-J2XEWBR8.json"
+          allow="microphone"
+          title="ACHE Legal CR Bot">
+        </iframe>
+      </div>
+    </div>
+
+    <!-- CLAUDE via API -->
+    <div class="ai-card">
+      <div class="ai-card-header">
+        <div class="ai-logo" style="background:linear-gradient(135deg,#cc785c,#e8956d);color:#fff;font-size:11px;font-weight:900">CL</div>
+        <div>
+          <div class="ai-name">CLAUDE SONNET</div>
+          <div class="ai-model">Anthropic API · claude-sonnet-4-20250514</div>
+        </div>
+        <div class="dot" style="margin-left:auto;background:var(--gold);animation:pulse 1.5s infinite"></div>
+      </div>
+      <div class="ai-chat-local">
+        <div class="chat-messages" id="claude-msgs">
+          <div class="msg bot">Hola. Soy Claude de Anthropic. Para activarme completamente ingresa tu API key en Configuración. Por ahora respondo con lógica local de ACHE.</div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="claude-input" placeholder="Pregunta a Claude..." onkeydown="if(event.key==='Enter')sendClaude()">
+          <button class="btn-send" onclick="sendClaude()">→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MULTI-AGENT -->
+    <div class="ai-card">
+      <div class="ai-card-header">
+        <div class="ai-logo" style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-size:11px;font-weight:900">MA</div>
+        <div>
+          <div class="ai-name">MULTI-AGENTE</div>
+          <div class="ai-model">ACHE-MESH · Agentes en paralelo</div>
+        </div>
+        <div class="dot" style="margin-left:auto;background:var(--purple);animation:pulse 1s infinite"></div>
+      </div>
+      <div class="ai-chat-local">
+        <div class="chat-messages" id="multi-msgs">
+          <div class="msg bot">🕸 <strong>ACHE-MESH Coordinator</strong><br>Orquestando agentes: Safety, Commerce, Governance, Inclusion. Envía una tarea y la distribuyo al agente correcto.</div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="multi-input" placeholder="Tarea para los agentes..." onkeydown="if(event.key==='Enter')sendMulti()">
+          <button class="btn-send" onclick="sendMulti()">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- LEGAL -->
+<div id="tab-legal" class="tab-content">
+<div class="legal-hub">
+  <div class="dash-title">Normativa Institucional</div>
+  <div class="dash-heading">ACHE LEGAL COSTA RICA</div>
+  <p style="color:var(--muted);margin-bottom:20px;font-size:14px">Bot especializado en normativa costarricense: Constitución Política, leyes, decretos, estructura del Estado, municipalidades, cooperativas (Ley 4179), SUGEF, y marco legal de IA.</p>
+  <div class="legal-frame-wrap">
+    <iframe
+      src="https://cdn.botpress.cloud/webchat/v3.6/shareable.html?configUrl=https://files.bpcontent.cloud/2026/03/07/15/20260307154405-J2XEWBR8.json"
+      allow="microphone"
+      title="ACHE Legal CR">
+    </iframe>
+  </div>
+</div>
+</div>
+
+<!-- GOVERNMENT -->
+<div id="tab-government" class="tab-content">
+<div class="govt-hub">
+  <div class="dash-title">Gestión del Estado</div>
+  <div class="dash-heading">GOBIERNO COSTA RICA — MÓDULOS</div>
+
+  <div class="ministry-grid">
+    <div class="ministry-card">
+      <div class="min-icon">🏛</div>
+      <div class="min-name">PRESIDENCIA</div>
+      <div class="min-desc">Decretos ejecutivos, acuerdos de Consejo de Gobierno, comunicaciones oficiales.</div>
+      <div class="min-status" style="color:var(--accent2)">● Integración planificada</div>
+    </div>
+    <div class="ministry-card">
+      <div class="min-icon">🏙</div>
+      <div class="min-name">MUNICIPALIDAD LA CRUZ</div>
+      <div class="min-desc">Co-solicitante. Alcalde Luis Alonso Alán Corea. Carta MLC-DAM-OF-092-2026 firmada.</div>
+      <div class="min-status" style="color:var(--accent2)">● Alianza activa</div>
+    </div>
+    <div class="ministry-card">
+      <div class="min-icon">💻</div>
+      <div class="min-name">MICITT</div>
+      <div class="min-desc">Ministerio de Ciencia, Innovación, Tecnología. Política Nacional IA 2023-2027.</div>
+      <div class="min-status" style="color:var(--gold)">◐ Coordinación activa</div>
+    </div>
+    <div class="ministry-card">
+      <div class="min-icon">🎓</div>
+      <div class="min-name">LICEO DIURNO LA CRUZ</div>
+      <div class="min-desc">Única secundaria del cantón. 800+ estudiantes. ACHE-INCLUSION Sitio 3.</div>
+      <div class="min-status" style="color:var(--accent2)">● Alianza confirmada</div>
+    </div>
+    <div class="ministry-card">
+      <div class="min-icon">🏦</div>
+      <div class="min-name">BNCR / INFOCOOP</div>
+      <div class="min-desc">Línea de crédito ₡1.200M en trámite. INFOCOOP audita anualmente COOPECRUCENOS.</div>
+      <div class="min-status" style="color:var(--gold)">◐ Q1 2026 en proceso</div>
+    </div>
+    <div class="ministry-card">
+      <div class="min-icon">🔐</div>
+      <div class="min-name">SUGEF / BCCR</div>
+      <div class="min-desc">Marco regulatorio financiero. Requisito para operación bancaria real (Ley 7558).</div>
+      <div class="min-status" style="color:var(--muted)">○ Licencia pendiente</div>
+    </div>
+    <div class="ministry-card">
+      <div class="min-icon">🌐</div>
+      <div class="min-name">ESTADO DEPT. EE.UU.</div>
+      <div class="min-desc">Digital Cities Challenge. SOI enviado marzo 2026. $300,000 USD solicitados.</div>
+      <div class="min-status" style="color:var(--gold)">◐ En evaluación</div>
+    </div>
+    <div class="ministry-card">
+      <div class="min-icon">🛡</div>
+      <div class="min-name">CENTRO POLICIAL MURCIÉLAGO</div>
+      <div class="min-desc">Formación policial nacional. Integración ACHE-SAFETY prevista en Fase 2.</div>
+      <div class="min-status" style="color:var(--muted)">○ Fase 2 planificada</div>
+    </div>
+    <div class="ministry-card">
+      <div class="min-icon">📋</div>
+      <div class="min-name">HACIENDA CR</div>
+      <div class="min-desc">Facturación electrónica XML v4.3, clave 50 dígitos, IVA 13%, Ley 9635.</div>
+      <div class="min-status" style="color:var(--gold)">◐ Módulo en instalación</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- AUTOPROGRAMACIÓN -->
+<div id="tab-autoprog" class="tab-content">
+<div class="auto-prog">
+  <div class="dash-title">Motor de Evolución</div>
+  <div class="dash-heading">ACHE — AUTOPROGRAMACIÓN</div>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="term-dot" style="background:#ff5f57"></div>
+      <div class="term-dot" style="background:#ffbd2e"></div>
+      <div class="term-dot" style="background:#28ca41"></div>
+      <span style="margin-left:8px;font-family:'JetBrains Mono';font-size:11px;color:#5a7a99">ACHE-KERNEL · Auto-Programming Engine v2.0 · GONZAGA-CBM-Ω-001</span>
+    </div>
+    <div class="terminal-body" id="terminal-output">
+      <div class="term-line"><span class="term-prompt">ache@gonzaga:~$ </span><span class="term-cmd">ache --boot --cell GONZAGA-CBM-OMEGA-001</span></div>
+      <div class="term-line"><span class="term-ok">✓ CCPLoader: 13 principios cargados</span></div>
+      <div class="term-line"><span class="term-ok">✓ AcheMemory: SQLite append-only operacional</span></div>
+      <div class="term-line"><span class="term-ok">✓ RulesEngine: evaluador activo</span></div>
+      <div class="term-line"><span class="term-ok">✓ API REST: http://localhost:8080 activo</span></div>
+      <div class="term-line"><span class="term-ok">✓ Supabase sync: modo --watch cada 300s</span></div>
+      <div class="term-line"><span class="term-info">ℹ ngrok: https://unpenetratively-marigraphic-candra.ngrok-free.dev</span></div>
+      <div class="term-line"><span class="term-warn">⚡ ACHE-MESH: simulador activo, despliegue físico pendiente</span></div>
+      <div class="term-line"><span class="term-warn">⚡ ache_hacienda.py: instalación pendiente en GONZAGA</span></div>
+      <div class="term-line"><span class="term-prompt">ache@gonzaga:~$ </span><span class="term-cmd">_<span class="cursor">█</span></span></div>
+    </div>
+  </div>
+
+  <div class="agent-grid" style="margin-top:20px">
+    <div class="agent-card running" onclick="runAgent('safety')">
+      <div class="agent-icon">🛡</div>
+      <div class="agent-name">SAFETY</div>
+      <div class="agent-status">ANALIZANDO · 3 alertas</div>
+    </div>
+    <div class="agent-card" onclick="runAgent('commerce')">
+      <div class="agent-icon">💰</div>
+      <div class="agent-name">COMMERCE</div>
+      <div class="agent-status">IDLE · listo</div>
+    </div>
+    <div class="agent-card running" onclick="runAgent('governance')">
+      <div class="agent-icon">🏛</div>
+      <div class="agent-name">GOVERNANCE</div>
+      <div class="agent-status">SINCRONIZANDO</div>
+    </div>
+    <div class="agent-card" onclick="runAgent('inclusion')">
+      <div class="agent-icon">🌐</div>
+      <div class="agent-name">INCLUSION</div>
+      <div class="agent-status">PLANIFICADO</div>
+    </div>
+    <div class="agent-card" onclick="runAgent('mesh')">
+      <div class="agent-icon">🕸</div>
+      <div class="agent-name">MESH</div>
+      <div class="agent-status">5 nodos sim.</div>
+    </div>
+    <div class="agent-card" onclick="runAgent('hacienda')">
+      <div class="agent-icon">📄</div>
+      <div class="agent-name">HACIENDA</div>
+      <div class="agent-status">PENDIENTE inst.</div>
+    </div>
+    <div class="agent-card" onclick="runAgent('legal')">
+      <div class="agent-icon">⚖</div>
+      <div class="agent-name">LEGAL CR</div>
+      <div class="agent-status">BOTPRESS · LIVE</div>
+    </div>
+    <div class="agent-card" onclick="runAgent('autocode')">
+      <div class="agent-icon">⚙</div>
+      <div class="agent-name">AUTOCODE</div>
+      <div class="agent-status">EN DESARROLLO</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px;margin-top:20px">
+    <button class="btn-primary" onclick="runBootSequence()">▶ Iniciar Boot Completo</button>
+    <button class="btn-primary" onclick="runAutoScan()" style="background:linear-gradient(135deg,var(--accent2),#00cc7a)">🔍 Auto-Scan Módulos</button>
+    <button class="btn-primary" onclick="runSync()" style="background:linear-gradient(135deg,var(--accent3),#e55a2b)">☁ Sincronizar Supabase</button>
+  </div>
+</div>
+</div>
+
+<!-- FINTECH -->
+<div id="tab-fintech" class="tab-content">
+<div class="fintech">
+  <div class="dash-title">Plataforma Financiera</div>
+  <div class="dash-heading" id="fintech-heading">MOTOR DE INGRESOS ACHE</div>
+
+  <!-- DEMO WARNING -->
+  <div style="background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.4);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:var(--accent3);display:flex;gap:10px;align-items:flex-start">
+    <span style="font-size:16px;flex-shrink:0">⚠</span>
+    <span><strong>MODO DEMOSTRACIÓN:</strong> Los módulos de Crypto Wallet, Banco ACHE y SINPE requieren licencia SUGEF (Ley 7558) y cumplimiento AML/KYC (Ley 7786) para operar con fondos reales. Esta interfaz es el scaffold técnico. Los datos son simulados.</span>
+  </div>
+
+  <!-- REVENUE -->
+  <div id="fintech-revenue">
+  <div class="revenue-grid">
+    <div class="rev-source">
+      <div class="rev-icon">🏨</div>
+      <div class="rev-name">Hotel COOPECRUCENOS</div>
+      <div class="rev-amount" id="rev-hotel">₡840,000</div>
+      <div class="rev-period">Hoy · 13 hab × $80 × 0.81 ocup.</div>
+      <div class="rev-bar"><div class="rev-bar-fill" style="width:81%"></div></div>
+    </div>
+    <div class="rev-source">
+      <div class="rev-icon">🛒</div>
+      <div class="rev-name">3 Supermercados</div>
+      <div class="rev-amount" id="rev-super">₡1,240,000</div>
+      <div class="rev-period">Hoy · incluye abast. escuelas</div>
+      <div class="rev-bar"><div class="rev-bar-fill" style="width:62%"></div></div>
+    </div>
+    <div class="rev-source">
+      <div class="rev-icon">💡</div>
+      <div class="rev-name">Servicios Digitales ACHE</div>
+      <div class="rev-amount" id="rev-digital">₡95,000</div>
+      <div class="rev-period">Facturas electrónicas + consultas</div>
+      <div class="rev-bar"><div class="rev-bar-fill" style="width:24%"></div></div>
+    </div>
+    <div class="rev-source">
+      <div class="rev-icon">🔁</div>
+      <div class="rev-name">ACHE Replicaciones</div>
+      <div class="rev-amount">$0</div>
+      <div class="rev-period">Proyectado: $35K/municipio × 20</div>
+      <div class="rev-bar"><div class="rev-bar-fill" style="width:2%"></div></div>
+    </div>
+    <div class="rev-source">
+      <div class="rev-icon">🌐</div>
+      <div class="rev-name">Digital Cities Grant</div>
+      <div class="rev-amount">$300K</div>
+      <div class="rev-period">US State Dept · En evaluación</div>
+      <div class="rev-bar"><div class="rev-bar-fill" style="width:35%"></div></div>
+    </div>
+    <div class="rev-source">
+      <div class="rev-icon">🏦</div>
+      <div class="rev-name">Línea BNCR</div>
+      <div class="rev-amount">₡1,200M</div>
+      <div class="rev-period">Crédito · Q1 2026 en trámite</div>
+      <div class="rev-bar"><div class="rev-bar-fill" style="width:50%"></div></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- WALLET -->
+  <div id="fintech-wallet" style="display:none">
+  <div class="fin-grid">
+    <div class="fin-card">
+      <div class="wallet-display">
+        <div class="wallet-addr">0x4C30...A9E2 · COOPECRUCENOS WALLET</div>
+        <div class="wallet-balance-label">Balance Total Estimado</div>
+        <div class="wallet-balance">$12,480.50</div>
+        <div class="wallet-usd">≈ ₡6,407,777 CRC</div>
+      </div>
+      <div class="crypto-list">
+        <div class="crypto-row">
+          <div class="crypto-icon" style="background:rgba(247,147,26,0.2);color:#f7931a">₿</div>
+          <div><div class="crypto-name" style="font-weight:600">Bitcoin</div><div class="crypto-sym">BTC</div></div>
+          <div style="text-align:right"><div class="crypto-amount">0.1420</div><div class="crypto-val">~$8,892</div></div>
+        </div>
+        <div class="crypto-row">
+          <div class="crypto-icon" style="background:rgba(98,126,234,0.2);color:#627eea">Ξ</div>
+          <div><div class="crypto-name" style="font-weight:600">Ethereum</div><div class="crypto-sym">ETH</div></div>
+          <div style="text-align:right"><div class="crypto-amount">1.250</div><div class="crypto-val">~$2,812</div></div>
+        </div>
+        <div class="crypto-row">
+          <div class="crypto-icon" style="background:rgba(0,212,255,0.2);color:var(--accent1)">◎</div>
+          <div><div class="crypto-name" style="font-weight:600">USDC</div><div class="crypto-sym">USDC</div></div>
+          <div style="text-align:right"><div class="crypto-amount">776.50</div><div class="crypto-val">~$777</div></div>
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn-primary" onclick="showWarning('crypto')">📤 Enviar / Recibir</button>
+        </div>
+      </div>
+    </div>
+    <div class="fin-card">
+      <div class="card-header"><span class="card-title">⚠ Requisitos Legales CR</span></div>
+      <div class="card-body" style="font-size:13px;line-height:1.7;color:var(--muted)">
+        <p style="margin-bottom:12px;color:var(--accent3);font-weight:600">Para operar crypto wallet real en Costa Rica:</p>
+        <p>• <strong style="color:var(--text)">Ley 7786</strong> — Estupefacientes: obliga AML/KYC a proveedores de servicios de activos virtuales (VASPs)</p>
+        <p>• <strong style="color:var(--text)">SUGEF</strong> — Debe notificar operaciones &gt;$10,000 USD</p>
+        <p>• <strong style="color:var(--text)">BCCR</strong> — No hay moneda digital oficial CR; las criptomonedas no son moneda de curso legal</p>
+        <p style="margin-top:12px;color:var(--text)">ACHE-LAB puede construir la infraestructura técnica completa. La licencia operativa requiere consultoría legal especializada.</p>
+        <button class="btn-primary" onclick="showTab('legal')" style="margin-top:16px">⚖ Consultar ACHE Legal CR</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- PAYMENTS -->
+  <div id="fintech-payments" style="display:none">
+  <div class="fin-grid">
+    <div class="fin-card">
+      <div class="card-header"><span class="card-title">💳 SINPE MÓVIL / Transferencia</span></div>
+      <div class="payment-form">
+        <div class="form-group">
+          <label class="form-label">Tipo de Operación</label>
+          <select class="form-select">
+            <option>SINPE Móvil (CR)</option>
+            <option>Transferencia IBAN</option>
+            <option>Pago de Servicio</option>
+            <option>Factura Electrónica</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Destinatario / Número</label>
+          <input class="form-input" placeholder="Ej: 8888-8888 o CR21 0152 0200 1026 2841 66">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Monto (CRC)</label>
+          <input class="form-input" type="number" placeholder="₡0.00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Concepto</label>
+          <input class="form-input" placeholder="Descripción del pago...">
+        </div>
+        <button class="btn-primary" onclick="showWarning('payment')">Confirmar Pago → HumanCheckpoint</button>
+      </div>
+    </div>
+    <div class="fin-card">
+      <div class="card-header"><span class="card-title">📋 Últimas Transacciones</span></div>
+      <div class="card-body">
+        <div id="tx-list">
+          <!-- populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- BANK -->
+  <div id="fintech-bank" style="display:none">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">🏦</div>
+    <div style="font-family:'Orbitron',monospace;font-size:20px;font-weight:800;color:var(--accent1);margin-bottom:8px">BANCO ACHE</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:24px;max-width:500px;margin-left:auto;margin-right:auto;line-height:1.7">
+      La infraestructura técnica de Banco ACHE está lista para construirse. Para operar como entidad financiera en Costa Rica se requiere licencia SUGEF bajo la <strong style="color:var(--text)">Ley Orgánica del Banco Central (Ley 7558)</strong>.
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
+        <div style="font-size:24px;margin-bottom:8px">✅</div>
+        <div style="font-size:12px;font-weight:600;color:var(--accent2)">LISTO</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Infraestructura técnica (ACHE-LAB $20K)</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
+        <div style="font-size:24px;margin-bottom:8px">⚙</div>
+        <div style="font-size:12px;font-weight:600;color:var(--gold)">EN PROCESO</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">API SINPE BCCR (requiere convenio bancario)</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px">
+        <div style="font-size:24px;margin-bottom:8px">📋</div>
+        <div style="font-size:12px;font-weight:600;color:var(--muted)">PENDIENTE</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Licencia SUGEF + capital mínimo requerido</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="showTab('legal')" style="max-width:300px;margin:auto">⚖ Consultar Marco Legal SUGEF</button>
+  </div>
+  </div>
+
+</div>
+</div>
+
+</main>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <span id="notif-icon">✅</span>
+  <span id="notif-text">Operación completada</span>
+</div>
+
+<!-- MODAL WARNING -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">⚠ HumanCheckpoint Requerido</div>
+    <div class="modal-warning" id="modal-warning">Esta acción requiere aprobación humana según CCP-01.</div>
+    <div class="modal-info" id="modal-info">Descripción de la operación.</div>
+    <div class="modal-btns">
+      <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn-danger" onclick="confirmModal()">Confirmar (Bajo mi Responsabilidad)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────
+const state = {
+  events: 847,
+  users: 127,
+  activeTab: 'dashboard',
+  activeFintechTab: 'revenue',
+};
+
+const ACHE_BASE = 'http://localhost:8080';
+
+// ── TAB NAVIGATION ──────────────────────────────────
+function showTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  
+  const el = document.getElementById('tab-' + tab);
+  if (el) el.classList.add('active');
+  
+  // Update sidebar
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.includes(getTabLabel(tab))) n.classList.add('active');
+  });
+  
+  state.activeTab = tab;
+  
+  if (tab === 'fintech') showFintechTab(state.activeFintechTab);
+}
+
+function getTabLabel(tab) {
+  const labels = { dashboard:'Dashboard', 'ai-hub':'Hub', legal:'Legal', government:'Gobierno', autoprog:'Autoprogramación', fintech:'Motor' };
+  return labels[tab] || '';
+}
+
+function showTabFintech(sub) {
+  showTab('fintech');
+  state.activeFintechTab = sub;
+  
+  ['revenue','wallet','payments','bank'].forEach(s => {
+    const el = document.getElementById('fintech-' + s);
+    if (el) el.style.display = s === sub ? 'block' : 'none';
+  });
+  
+  const headings = {
+    revenue: 'MOTOR DE INGRESOS ACHE',
+    wallet: 'CRYPTO WALLET — COOPECRUCENOS',
+    payments: 'PAGOS Y TRANSFERENCIAS',
+    bank: 'BANCO ACHE — INFRAESTRUCTURA'
+  };
+  document.getElementById('fintech-heading').textContent = headings[sub] || '';
+}
+
+// ── ACHE API CALLS ──────────────────────────────────
+async function callACHE(endpoint) {
+  const terminal = document.getElementById('terminal-output');
+  addTermLine(`<span class="term-prompt">ache@gonzaga:~$ </span><span class="term-cmd">curl ${ACHE_BASE}${endpoint}</span>`);
+  
+  try {
+    const res = await fetch(ACHE_BASE + endpoint, { 
+      signal: AbortSignal.timeout(3000),
+      mode: 'cors'
+    });
+    const data = await res.json();
+    addTermLine(`<span class="term-ok">✓ ${JSON.stringify(data).substring(0,120)}...</span>`);
+    notify('✅', `ACHE responde: ${endpoint}`);
+  } catch(e) {
+    addTermLine(`<span class="term-warn">⚡ Servidor local en localhost:8080 — ejecuta: python boot.py</span>`);
+    addTermLine(`<span class="term-out">  Respuesta simulada: {"status":"OK","cell":"GONZAGA-CBM-OMEGA-001","trl":5,"ccps":13}</span>`);
+    notify('⚡', 'ACHE local: inicia python boot.py');
+  }
+}
+
+// ── CHAT SYSTEMS ──────────────────────────────────
+const acheResponses = {
+  default: [
+    '⬡ Evento registrado en cadena SHA-256. TRL-5 operacional. ¿Algo más?',
+    '⬡ Consultando CCPs... CCP-01 (Soberanía Humana) activo. Aprobación requerida para acciones críticas.',
+    '⬡ AcheMemory: append-only SQLite. Ningún evento puede borrarse. Cadena íntegra.',
+    '⬡ Sincronizando con Supabase... 7 eventos en cloud. localhost:8080 activo.',
+    '⬡ ACHE-MESH: 5 nodos simulados. GONZAGA-CBM-Ω-001 es el nodo primario del cantón.',
+  ],
+  estado: '⬡ TRL: 5/9 | Eventos: 847 | CCPs: 13 | Módulos activos: boot, telegram, sync, API | Supabase: online | ngrok: activo',
+  factura: '⬡ Para facturar: /factura [cliente] [monto]. Requiere ache_hacienda.py instalado. XML v4.3, IVA 13%, clave 50 dígitos. Pendiente configurar credenciales ATV.',
+  iva: (txt) => {
+    const num = parseFloat(txt.match(/[\d.,]+/)?.[0] || 0);
+    if (num) return `⬡ IVA (13%): ₡${(num*0.13).toLocaleString()} | Total: ₡${(num*1.13).toLocaleString()}`;
+    return '⬡ Indica el monto: ej "iva 50000"';
+  },
+  principios: '⬡ 10 CCPs activos: 1-Soberanía Humana | 2-Memoria Inamovible | 3-Transparencia Total | 4-Offline-First | 5-Sin Dependencia Única | 6-Mínimo Impacto | 7-Equidad Digital | 8-Gobernanza Cooperativa | 9-Escalabilidad Federada | 10-Misión Social Primaria',
+};
+
+function getACHEResponse(text) {
+  const t = text.toLowerCase();
+  if (t.includes('estado') || t.includes('status')) return acheResponses.estado;
+  if (t.includes('factura')) return acheResponses.factura;
+  if (t.includes('iva') || t.includes('impuesto')) return acheResponses.iva(t);
+  if (t.includes('principio') || t.includes('ccp')) return acheResponses.principios;
+  return acheResponses.default[Math.floor(Math.random() * acheResponses.default.length)];
+}
+
+async function sendACHE() {
+  const input = document.getElementById('ache-input');
+  const msgs = document.getElementById('ache-msgs');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  addMsg(msgs, text, 'user');
+  input.value = '';
+  
+  const thinking = addMsg(msgs, '⬡ procesando ciclo cognitivo...', 'thinking');
+  
+  // Try real API first
+  let response;
+  try {
+    const res = await fetch(`${ACHE_BASE}/recomendar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contexto: text, urgencia: 'normal' }),
+      signal: AbortSignal.timeout(2000),
+      mode: 'cors'
+    });
+    const data = await res.json();
+    response = data.recomendacion || data.result || JSON.stringify(data);
+  } catch(e) {
+    await new Promise(r => setTimeout(r, 800));
+    response = getACHEResponse(text);
+  }
+  
+  thinking.remove();
+  addMsg(msgs, response, 'bot');
+  state.events++;
+  document.getElementById('kpi-events').textContent = state.events.toLocaleString();
+}
+
+async function sendClaude() {
+  const input = document.getElementById('claude-input');
+  const msgs = document.getElementById('claude-msgs');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  addMsg(msgs, text, 'user');
+  input.value = '';
+  const thinking = addMsg(msgs, '◎ Procesando con lógica ACHE...', 'thinking');
+  
+  await new Promise(r => setTimeout(r, 900));
+  thinking.remove();
+  
+  const responses = [
+    `Para el contexto de ACHE y COOPECRUCENOS: "${text}" — te recomiendo consultar primero MASTER.md (los 10 CCPs) y verificar que cualquier acción pase por HumanCheckpoint si es irreversible.`,
+    `Analizando tu consulta en el contexto de La Cruz, Guanacaste: el CCP-07 (Equidad Digital) indica que la solución debe funcionar para el usuario de menor capacidad tecnológica. ¿Cómo aplica eso aquí?`,
+    `Desde la perspectiva del Digital Cities Challenge: tu propuesta debe mostrar TRL 7 al mes 12. Para "${text}", el camino más directo es documentar el impacto medible en los 8,000 beneficiarios proyectados.`,
+  ];
+  
+  addMsg(msgs, responses[Math.floor(Math.random() * responses.length)], 'bot');
+}
+
+async function sendMulti() {
+  const input = document.getElementById('multi-input');
+  const msgs = document.getElementById('multi-msgs');
+  const text = input.value.trim();
+  if (!text) return;
+  
+  addMsg(msgs, text, 'user');
+  input.value = '';
+  const thinking = addMsg(msgs, '🕸 Enrutando a agentes...', 'thinking');
+  
+  await new Promise(r => setTimeout(r, 600));
+  thinking.remove();
+  
+  const t = text.toLowerCase();
+  let agent, response;
+  
+  if (t.includes('segur') || t.includes('alert') || t.includes('emerg')) {
+    agent = '🛡 SAFETY';
+    response = 'Recibida alerta. Clasificando... Prioridad MEDIA. Notificando coordinador municipal. Registrando en cadena SHA-256.';
+  } else if (t.includes('factura') || t.includes('pago') || t.includes('venta')) {
+    agent = '💰 COMMERCE';
+    response = 'Procesando transacción. Validando IVA 13% (Ley 9635). Generando XML v4.3 para Hacienda CR. HumanCheckpoint: ¿confirmas el monto?';
+  } else if (t.includes('report') || t.includes('panel') || t.includes('datos')) {
+    agent = '🏛 GOVERNANCE';
+    response = 'Generando reporte. 847 eventos en cadena. 127 usuarios activos. Sincronizado con Municipalidad La Cruz. Dashboard actualizado.';
+  } else {
+    agent = '🌐 INCLUSION';
+    response = 'Tarea recibida. Verificando disponibilidad en terminales offline. Sitios activos: Cooperativa, Municipalidad. Liceo: planificado.';
+  }
+  
+  addMsg(msgs, `[${agent}] ${response}`, 'bot');
+}
+
+// ── UTILS ──────────────────────────────────────────
+function addMsg(container, text, type) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.innerHTML = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function addTermLine(html) {
+  const terminal = document.getElementById('terminal-output');
+  if (!terminal) return;
+  const div = document.createElement('div');
+  div.className = 'term-line';
+  div.innerHTML = html;
+  terminal.appendChild(div);
+  terminal.scrollTop = terminal.scrollHeight;
+}
+
+function notify(icon, text) {
+  const el = document.getElementById('notif');
+  document.getElementById('notif-icon').textContent = icon;
+  document.getElementById('notif-text').textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+// ── CHAIN EVENTS ──────────────────────────────────
+const sampleEvents = [
+  { type: 'BOOT', agent: 'kernel', color: 'blue', text: 'Sistema iniciado · GONZAGA-CBM-Ω-001', hash: 'sha256:a3f8...9d21' },
+  { type: 'SYNC', agent: 'ache_sync', color: 'green', text: 'Supabase sync OK · 7 eventos cloud', hash: 'sha256:b712...4e09' },
+  { type: 'PERCEPCION', agent: 'telegram_bot', color: 'blue', text: 'Usuario activo · /estado consultado', hash: 'sha256:c091...7f33' },
+  { type: 'FACTURA', agent: 'hacienda_mod', color: 'gold', text: 'Factura demo generada · XML v4.3', hash: 'sha256:d445...2a18' },
+  { type: 'CHECKPOINT', agent: 'rules_engine', color: 'orange', text: 'HumanCheckpoint solicitado · esperando...', hash: 'sha256:e823...1b56' },
+];
+
+function renderChainEvents() {
+  const container = document.getElementById('chain-events');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  const colors = { blue:'blue', green:'green', gold:'gold', orange:'orange' };
+  
+  sampleEvents.forEach((ev, i) => {
+    setTimeout(() => {
+      const div = document.createElement('div');
+      div.className = 'chain-event';
+      div.innerHTML = `
+        <div class="event-dot ${ev.color}"></div>
+        <div class="event-text">
+          <div><span class="event-type">${ev.type}</span> · <span style="color:var(--muted);font-size:12px">${ev.agent}</span></div>
+          <div class="event-meta">${ev.text}</div>
+          <div class="event-hash">${ev.hash}</div>
+        </div>
+      `;
+      container.appendChild(div);
+    }, i * 150);
+  });
+}
+
+// ── TERMINAL ──────────────────────────────────────
+function runBootSequence() {
+  const steps = [
+    { delay: 0, html: '<span class="term-prompt">ache@gonzaga:~$ </span><span class="term-cmd">python boot.py --full</span>' },
+    { delay: 300, html: '<span class="term-out">Cargando MASTER.md...</span>' },
+    { delay: 600, html: '<span class="term-ok">✓ CCPLoader: 13/13 principios OK</span>' },
+    { delay: 900, html: '<span class="term-ok">✓ AcheMemory: ache_cell.db abierta (append-only)</span>' },
+    { delay: 1200, html: '<span class="term-ok">✓ RulesEngine: 42 reglas evaluadas</span>' },
+    { delay: 1500, html: '<span class="term-ok">✓ FastAPI: http://localhost:8080 activo</span>' },
+    { delay: 1800, html: '<span class="term-ok">✓ Telegram Bot: polling iniciado</span>' },
+    { delay: 2100, html: '<span class="term-ok">✓ Supabase sync: modo --watch 300s</span>' },
+    { delay: 2400, html: '<span class="term-ok">✓ ngrok: tunnel activo</span>' },
+    { delay: 2700, html: '<span class="term-info">ℹ ACHE v2.0 · GONZAGA-CBM-Ω-001 · TRL-5 · READY</span>' },
+    { delay: 3000, html: '<span class="term-prompt">ache@gonzaga:~$ </span><span class="term-cmd">_<span class="cursor">█</span></span>' },
+  ];
+  
+  steps.forEach(s => setTimeout(() => addTermLine(s.html), s.delay));
+  notify('🚀', 'Boot sequence iniciada');
+}
+
+function runAutoScan() {
+  const modules = ['boot.py', 'ache_bot.py', 'ache_sync.py', 'server.py', 'swarm_sim.py', 'ache_hacienda.py'];
+  modules.forEach((m, i) => {
+    setTimeout(() => {
+      const ok = m !== 'ache_hacienda.py';
+      addTermLine(`<span class="${ok?'term-ok':'term-warn'}">${ok?'✓':'⚡'} ${m}: ${ok?'OK':'pendiente instalación'}</span>`);
+    }, i * 400);
+  });
+  notify('🔍', 'Escaneando módulos ACHE...');
+}
+
+function runSync() {
+  addTermLine('<span class="term-prompt">ache@gonzaga:~$ </span><span class="term-cmd">python ache_sync.py --status</span>');
+  setTimeout(() => addTermLine('<span class="term-ok">✓ LOCAL: 847 eventos · 12 facturas</span>'), 300);
+  setTimeout(() => addTermLine('<span class="term-ok">✓ SUPABASE: ache_events:847 · ache_facturas:12</span>'), 600);
+  setTimeout(() => addTermLine('<span class="term-info">ℹ Próximo sync en 287 segundos</span>'), 900);
+  notify('☁', 'Supabase: sincronizado');
+}
+
+function runAgent(name) {
+  const msgs = {
+    safety: `[SAFETY] Analizando eventos de seguridad en La Cruz... 3 incidentes en últimas 24h. Clasificación: 2 BAJA, 1 MEDIA. Notificando Municipalidad.`,
+    commerce: `[COMMERCE] Motor de facturación listo. ache_hacienda.py requiere instalación. Credenciales ATV: pendientes. IVA 13% configurado.`,
+    governance: `[GOVERNANCE] Dashboard actualizado. 127 usuarios. 847 eventos. Sincronizado con Supabase. ngrok: activo.`,
+    inclusion: `[INCLUSION] Terminales offline: 0/3 instaladas. Planificadas: Cooperativa, Municipalidad, Liceo. Presupuesto: $20K SOI.`,
+    mesh: `[MESH] Simulando 5 nodos: GONZAGA(PRIMARY), MUNI(PRIMARY), LICEO(EDGE), PEÑAS(RELAY), CAMPO(EDGE). Propagación: 87%.`,
+    hacienda: `[HACIENDA] XML v4.3 listo. Consecutivo: auto. Clave: 50 dígitos. PENDIENTE: instalar ache_hacienda.py en GONZAGA.`,
+    legal: `[LEGAL] Botpress CR activo. Normativa: Constitución Política, Ley 4179 (cooperativas), Ley 7558 (SUGEF), Ley 7786 (AML).`,
+    autocode: `[AUTOCODE] Motor de autoprogramación en desarrollo. Ciclo: detectar-gap → diseñar-módulo → validar-CCPs → implementar → testear → registrar-en-cadena.`,
+  };
+  
+  addTermLine(`<span class="term-prompt">ache@gonzaga:~$ </span><span class="term-cmd">ache agent --run ${name}</span>`);
+  setTimeout(() => addTermLine(`<span class="term-info">ℹ ${msgs[name] || 'Agente activado'}</span>`), 400);
+  notify('⚙', `Agente ${name.toUpperCase()} activado`);
+  showTab('autoprog');
+}
+
+// ── MODALS / WARNINGS ──────────────────────────────
+function showWarning(type) {
+  const configs = {
+    crypto: {
+      title: '⚠ Operación Crypto — HumanCheckpoint (CCP-01)',
+      warning: 'Las transacciones de criptomonedas son IRREVERSIBLES. Esta operación no puede deshacerse una vez confirmada.',
+      info: 'Según CCP-01 (Soberanía Humana), ACHE requiere confirmación humana explícita para todas las transacciones financieras. Esta interfaz es modo DEMO — para operación real se requiere licencia SUGEF.'
+    },
+    payment: {
+      title: '⚠ Transferencia Bancaria — HumanCheckpoint (CCP-01)',
+      warning: 'Las transferencias SINPE son IRREVERSIBLES una vez procesadas por el BCCR.',
+      info: 'ACHE registrará esta transacción en la cadena SHA-256 inamovible. El HumanCheckpoint (CCP-01) requiere tu confirmación. En modo DEMO: ningún dinero real se mueve.'
+    }
+  };
+  
+  const c = configs[type];
+  document.getElementById('modal-title').textContent = c.title;
+  document.getElementById('modal-warning').textContent = c.warning;
+  document.getElementById('modal-info').textContent = c.info;
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function confirmModal() {
+  closeModal();
+  const ev = { type: 'CHECKPOINT', text: 'Acción financiera aprobada por humano', color: 'gold', agent: 'human', hash: 'sha256:' + Math.random().toString(36).substring(2,10) + '...' + Math.random().toString(36).substring(2,6) };
+  sampleEvents.unshift(ev);
+  if (sampleEvents.length > 8) sampleEvents.pop();
+  renderChainEvents();
+  notify('✅', 'HumanCheckpoint completado · Registrado en cadena');
+}
+
+// ── TRANSACTIONS ──────────────────────────────────
+function renderTransactions() {
+  const txs = [
+    { type: '↑', desc: 'Hotel — 3 hab.', amount: '₡240,000', time: '08:32', color: 'var(--accent2)' },
+    { type: '↑', desc: 'Supermercado #1', amount: '₡187,500', time: '09:15', color: 'var(--accent2)' },
+    { type: '↓', desc: 'Prov. alimentaria', amount: '₡95,000', time: '10:00', color: 'var(--red)' },
+    { type: '↑', desc: 'Factura electrónica', amount: '₡52,000', time: '11:22', color: 'var(--accent2)' },
+  ];
+  
+  const container = document.getElementById('tx-list');
+  if (!container) return;
+  
+  container.innerHTML = txs.map(tx => `
+    <div class="chain-event">
+      <div style="width:24px;height:24px;border-radius:50%;background:${tx.type==='↑'?'rgba(0,255,157,0.15)':'rgba(255,45,85,0.15)'};display:flex;align-items:center;justify-content:center;font-size:12px;color:${tx.color};flex-shrink:0">${tx.type}</div>
+      <div class="event-text">
+        <div class="event-type">${tx.desc}</div>
+        <div class="event-meta" style="color:${tx.color};font-weight:600">${tx.amount}</div>
+        <div class="event-hash">${tx.time} hoy · Registrado en cadena SHA-256</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── LIVE UPDATES ──────────────────────────────────
+function updateKPIs() {
+  const el = document.getElementById('kpi-revenue');
+  if (el) {
+    const base = 280000 + Math.floor(Math.random() * 20000);
+    el.textContent = '₡' + (base/1000).toFixed(0) + 'K';
+  }
+}
+
+// ── INIT ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderChainEvents();
+  renderTransactions();
+  
+  // Live KPI updates
+  setInterval(updateKPIs, 8000);
+  
+  // Live event counter
+  setInterval(() => {
+    state.events += Math.random() > 0.7 ? 1 : 0;
+    const el = document.getElementById('kpi-events');
+    if (el) el.textContent = state.events.toLocaleString();
+  }, 5000);
+  
+  // Add boot event to terminal after load
+  setTimeout(() => {
+    addTermLine('<span class="term-ok">✓ ACHE Madre Government UI cargado</span>');
+    addTermLine('<span class="term-info">ℹ Conectando a localhost:8080...</span>');
+    
+    fetch(ACHE_BASE + '/health', { signal: AbortSignal.timeout(2000), mode: 'cors' })
+      .then(r => r.json())
+      .then(d => addTermLine('<span class="term-ok">✓ Servidor ACHE respondiendo: ' + JSON.stringify(d) + '</span>'))
+      .catch(() => addTermLine('<span class="term-warn">⚡ localhost:8080 no responde · ejecuta: python boot.py</span>'));
+  }, 500);
+  
+  // Initial notification
+  setTimeout(() => notify('⬡', 'ACHE Madre Government · Sistema iniciado'), 1000);
+});
+</script>
+</body>
+</html>
