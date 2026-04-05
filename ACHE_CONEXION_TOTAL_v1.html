@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACHE CONEXION TOTAL v1.0 · COOPECRUCENOS R.L.</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;500&family=Exo+2:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #020c12;
+  --surf: #061820;
+  --card: #0a2230;
+  --bdr: #1a4060;
+  --cyan: #00e5ff;
+  --grn: #00ff88;
+  --amber: #ffb300;
+  --red: #ff5252;
+  --pur: #bd93f9;
+  --mut: #4a7090;
+  --txt: #c8e8f4;
+  --txt2: #7ab0cc;
+}
+.kid-mode {
+  --bg: #0d1b4a;
+  --surf: #152560;
+  --card: #1e3280;
+  --cyan: #00d4ff;
+  --grn: #00ff7f;
+  --amber: #ffd700;
+  font-size: 17px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--txt); font-family:'Exo 2',sans-serif; font-size:14px; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; background-image: linear-gradient(rgba(0,229,255,.008)1px,transparent 1px), linear-gradient(90deg,rgba(0,229,255,.008)1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
+
+/* LAYOUT */
+#app { display:grid; grid-template-columns:220px 1fr; grid-template-rows:56px 1fr; min-height:100vh; position:relative; z-index:1; }
+#hdr { grid-column:1/-1; display:flex; align-items:center; gap:12px; padding:0 20px; background:var(--surf); border-bottom:1px solid var(--bdr); }
+#sidebar { background:var(--surf); border-right:1px solid var(--bdr); padding:12px 0; display:flex; flex-direction:column; overflow-y:auto; }
+#main { overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; }
+
+/* HEADER */
+.hdr-logo { font-family:'Orbitron',monospace; font-size:15px; font-weight:900; color:var(--cyan); letter-spacing:3px; }
+.hdr-logo span { color:var(--grn); }
+.hdr-sub { font-size:10px; color:var(--mut); font-family:'JetBrains Mono',monospace; }
+.hdr-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+.live-dot { width:8px; height:8px; border-radius:50%; background:var(--grn); box-shadow:0 0 8px var(--grn); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+.hdr-time { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); }
+.btn-kid { padding:4px 12px; border:1px solid var(--pur); color:var(--pur); background:transparent; border-radius:20px; cursor:pointer; font-size:11px; font-family:'Exo 2',sans-serif; transition:.2s; }
+.btn-kid:hover { background:rgba(189,147,249,.15); }
+
+/* SIDEBAR NAV */
+.nav-section { font-size:9px; color:var(--mut); letter-spacing:.12em; padding:8px 16px 4px; font-family:'JetBrains Mono',monospace; }
+.nav-item { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; transition:.15s; color:var(--txt2); font-size:13px; border-left:3px solid transparent; }
+.nav-item:hover { background:rgba(0,229,255,.06); color:var(--txt); }
+.nav-item.active { background:rgba(0,229,255,.1); color:var(--cyan); border-left-color:var(--cyan); }
+.nav-icon { font-size:16px; width:20px; text-align:center; }
+.nav-status { margin-left:auto; width:6px; height:6px; border-radius:50%; }
+.ns-ok { background:var(--grn); }
+.ns-off { background:var(--red); opacity:.6; }
+.ns-unk { background:var(--amber); }
+
+/* CARDS */
+.card { background:var(--card); border:1px solid var(--bdr); border-radius:12px; padding:16px; }
+.card-sm { background:var(--card); border:1px solid var(--bdr); border-radius:10px; padding:12px; }
+.card-title { font-family:'Orbitron',monospace; font-size:10px; color:var(--cyan); letter-spacing:.15em; margin-bottom:12px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+.grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+
+/* SECTIONS (hidden/shown) */
+.section { display:none; flex-direction:column; gap:16px; }
+.section.active { display:flex; }
+
+/* CHAT */
+.chat-wrap { display:grid; grid-template-columns:1fr 260px; gap:12px; min-height:70vh; }
+.chat-history { background:var(--surf); border:1px solid var(--bdr); border-radius:12px; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; max-height:65vh; }
+.msg { padding:10px 14px; border-radius:10px; font-size:13px; line-height:1.6; max-width:85%; }
+.msg-user { background:rgba(0,229,255,.1); border:1px solid rgba(0,229,255,.2); color:var(--cyan); align-self:flex-end; }
+.msg-ai { background:var(--card); border:1px solid var(--bdr); color:var(--txt); align-self:flex-start; }
+.msg-sys { background:rgba(255,179,0,.06); border:1px solid rgba(255,179,0,.2); color:var(--amber); align-self:center; font-size:11px; width:100%; text-align:center; }
+.msg-provider { font-size:9px; color:var(--mut); margin-bottom:4px; font-family:'JetBrains Mono',monospace; }
+.chat-input-wrap { display:flex; gap:8px; }
+.chat-input { flex:1; background:var(--surf); border:1px solid var(--bdr); color:var(--txt); border-radius:8px; padding:10px 14px; font-family:'Exo 2',sans-serif; font-size:13px; resize:none; outline:none; transition:.2s; }
+.chat-input:focus { border-color:var(--cyan); }
+.chat-controls { background:var(--card); border:1px solid var(--bdr); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:12px; }
+.ctrl-label { font-size:10px; color:var(--mut); margin-bottom:4px; font-family:'JetBrains Mono',monospace; }
+.ctrl-select { width:100%; background:var(--surf); border:1px solid var(--bdr); color:var(--txt); border-radius:6px; padding:7px 10px; font-family:'Exo 2',sans-serif; font-size:12px; outline:none; }
+.ctrl-input { width:100%; background:var(--surf); border:1px solid var(--bdr); color:var(--txt); border-radius:6px; padding:7px 10px; font-family:'JetBrains Mono',monospace; font-size:11px; outline:none; }
+.ctrl-input:focus, .ctrl-select:focus { border-color:var(--cyan); }
+.ctrl-textarea { width:100%; background:var(--surf); border:1px solid var(--bdr); color:var(--txt); border-radius:6px; padding:7px 10px; font-size:11px; font-family:'Exo 2',sans-serif; resize:none; outline:none; line-height:1.5; }
+
+/* BUTTONS */
+.btn { padding:8px 16px; border-radius:8px; cursor:pointer; font-family:'Exo 2',sans-serif; font-size:13px; font-weight:500; transition:.15s; border:none; }
+.btn-primary { background:var(--cyan); color:#020c12; }
+.btn-primary:hover { filter:brightness(1.1); }
+.btn-secondary { background:transparent; border:1px solid var(--bdr); color:var(--txt2); }
+.btn-secondary:hover { border-color:var(--cyan); color:var(--cyan); }
+.btn-sm { padding:5px 10px; font-size:11px; border-radius:6px; }
+.btn-grn { background:rgba(0,255,136,.1); border:1px solid rgba(0,255,136,.3); color:var(--grn); }
+.btn-red { background:rgba(255,82,82,.1); border:1px solid rgba(255,82,82,.3); color:var(--red); }
+.btn-loading { opacity:.6; pointer-events:none; }
+
+/* METRICS */
+.metric { text-align:center; }
+.metric-val { font-family:'Orbitron',monospace; font-size:22px; color:var(--cyan); font-weight:700; }
+.metric-label { font-size:10px; color:var(--mut); margin-top:2px; font-family:'JetBrains Mono',monospace; }
+.metric-unit { font-size:11px; color:var(--txt2); }
+
+/* STATUS BADGES */
+.badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:10px; font-family:'JetBrains Mono',monospace; }
+.badge-ok { background:rgba(0,255,136,.1); color:var(--grn); border:1px solid rgba(0,255,136,.3); }
+.badge-err { background:rgba(255,82,82,.1); color:var(--red); border:1px solid rgba(255,82,82,.3); }
+.badge-warn { background:rgba(255,179,0,.1); color:var(--amber); border:1px solid rgba(255,179,0,.3); }
+.badge-info { background:rgba(0,229,255,.1); color:var(--cyan); border:1px solid rgba(0,229,255,.3); }
+
+/* ISS MAP */
+#iss-map { width:100%; height:300px; background:#020a0d; border-radius:10px; border:1px solid var(--bdr); overflow:hidden; position:relative; }
+#iss-path { stroke:var(--amber); stroke-width:1; fill:none; opacity:.5; }
+.iss-marker { fill:var(--grn); }
+
+/* API GALAXY */
+.api-card { background:var(--surf); border:1px solid var(--bdr); border-radius:10px; padding:12px; transition:.15s; cursor:pointer; }
+.api-card:hover { border-color:var(--cyan); background:rgba(0,229,255,.04); }
+.api-name { font-size:13px; font-weight:500; color:var(--txt); margin-bottom:4px; }
+.api-desc { font-size:11px; color:var(--mut); line-height:1.4; }
+.api-tags { display:flex; gap:4px; flex-wrap:wrap; margin-top:8px; }
+.api-tag { background:rgba(0,229,255,.08); color:var(--cyan); border-radius:4px; padding:2px 7px; font-size:9px; font-family:'JetBrains Mono',monospace; }
+.apis-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+
+/* NETWORK MONITOR */
+.svc-row { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--surf); border:1px solid var(--bdr); border-radius:8px; }
+.svc-port { font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--cyan); width:60px; }
+.svc-name { flex:1; font-size:12px; }
+.svc-ping { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--mut); width:60px; text-align:right; }
+
+/* EDU LAB */
+.edu-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; }
+.edu-card { background:linear-gradient(135deg,var(--card),var(--surf)); border:2px solid var(--bdr); border-radius:16px; padding:20px; text-align:center; cursor:pointer; transition:.2s; }
+.edu-card:hover { border-color:var(--cyan); transform:translateY(-2px); }
+.edu-icon { font-size:40px; margin-bottom:10px; }
+.edu-title { font-size:16px; font-weight:700; color:var(--cyan); }
+.edu-desc { font-size:12px; color:var(--txt2); margin-top:6px; }
+.edu-chat { background:var(--surf); border:2px solid var(--bdr); border-radius:16px; padding:20px; }
+
+/* SEARCH */
+.search-bar { display:flex; gap:8px; margin-bottom:14px; }
+.search-input { flex:1; background:var(--surf); border:1px solid var(--bdr); color:var(--txt); border-radius:8px; padding:10px 14px; font-size:13px; outline:none; font-family:'Exo 2',sans-serif; }
+.search-input:focus { border-color:var(--cyan); }
+
+/* WEATHER */
+.weather-big { font-family:'Orbitron',monospace; font-size:56px; font-weight:700; color:var(--cyan); line-height:1; }
+.weather-code { font-size:18px; color:var(--txt2); margin-top:4px; }
+
+/* PROJECTS */
+.project-card { background:var(--card); border:1px solid var(--bdr); border-radius:12px; padding:16px; }
+.project-title { font-size:16px; font-weight:700; color:var(--amber); margin-bottom:8px; }
+.project-desc { font-size:13px; color:var(--txt2); line-height:1.6; margin-bottom:10px; }
+.project-impact { display:flex; gap:8px; flex-wrap:wrap; }
+.impact-tag { background:rgba(255,179,0,.1); color:var(--amber); border-radius:6px; padding:3px 10px; font-size:11px; }
+
+/* TYPING ANIMATION */
+.typing { display:inline-flex; gap:4px; align-items:center; padding:8px; }
+.typing span { width:6px; height:6px; background:var(--cyan); border-radius:50%; animation:blink 1.2s infinite; }
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--bdr); border-radius:3px; }
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  #app { grid-template-columns:1fr; }
+  #sidebar { display:none; }
+  .chat-wrap,.grid2,.grid3,.grid4 { grid-template-columns:1fr; }
+}
+
+/* QUOTE */
+.quote-box { border-left:3px solid var(--pur); padding:10px 16px; background:rgba(189,147,249,.05); border-radius:0 8px 8px 0; }
+.quote-txt { font-size:14px; font-style:italic; color:var(--txt2); }
+.quote-src { font-size:11px; color:var(--mut); margin-top:6px; font-family:'JetBrains Mono',monospace; }
+
+/* INFO BLOCK */
+.info-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid rgba(26,64,96,.5); font-size:12px; }
+.info-row:last-child { border:none; }
+.info-key { color:var(--mut); font-family:'JetBrains Mono',monospace; font-size:11px; }
+.info-val { color:var(--txt); font-weight:500; }
+
+/* MISSION BANNER */
+.mission { background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(0,255,136,.04)); border:1px solid rgba(0,229,255,.2); border-radius:12px; padding:16px 20px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header id="hdr">
+  <div>
+    <div class="hdr-logo">ACHE <span>TOTAL</span></div>
+    <div class="hdr-sub">COOPECRUCENOS R.L. · La Cruz, Guanacaste, CR · v1.0</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:2px;margin-left:16px">
+    <div style="font-size:9px;color:var(--mut);font-family:'JetBrains Mono',monospace">CONEXION</div>
+    <div id="hdr-status" style="font-size:11px;color:var(--grn);font-family:'JetBrains Mono',monospace">ONLINE · MULTI-API</div>
+  </div>
+  <div class="hdr-right">
+    <div class="live-dot"></div>
+    <div id="hdr-time" class="hdr-time"></div>
+    <button class="btn-kid" onclick="toggleKid()" id="btn-kid">🎓 MODO NIÑOS</button>
+    <button class="btn btn-secondary btn-sm" onclick="openConfig()">⚙ CONFIG</button>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="nav-section">NUCLEO</div>
+  <div class="nav-item active" onclick="show('ia')" id="nav-ia">
+    <span class="nav-icon">🧠</span> IA HUB
+    <div class="nav-status ns-ok"></div>
+  </div>
+  <div class="nav-item" onclick="show('cosmos')" id="nav-cosmos">
+    <span class="nav-icon">🛰</span> COSMOS
+    <div class="nav-status ns-ok"></div>
+  </div>
+  <div class="nav-item" onclick="show('planeta')" id="nav-planeta">
+    <span class="nav-icon">🌍</span> SEÑAL GLOBAL
+    <div class="nav-status ns-ok"></div>
+  </div>
+  <div class="nav-section">ECOSISTEMA</div>
+  <div class="nav-item" onclick="show('apis')" id="nav-apis">
+    <span class="nav-icon">🔌</span> API GALAXY
+    <div class="nav-status ns-ok"></div>
+  </div>
+  <div class="nav-item" onclick="show('red')" id="nav-red">
+    <span class="nav-icon">📡</span> RED ACHE
+    <div class="nav-status ns-unk" id="ns-red"></div>
+  </div>
+  <div class="nav-section">SOCIAL</div>
+  <div class="nav-item" onclick="show('edu')" id="nav-edu">
+    <span class="nav-icon">🎓</span> EDU LAB
+    <div class="nav-status ns-ok"></div>
+  </div>
+  <div class="nav-item" onclick="show('proyectos')" id="nav-proyectos">
+    <span class="nav-icon">💡</span> PROYECTOS
+    <div class="nav-status ns-ok"></div>
+  </div>
+  <div style="flex:1"></div>
+  <div style="padding:12px 16px;font-size:10px;color:var(--mut);font-family:'JetBrains Mono',monospace;border-top:1px solid var(--bdr)">
+    <div id="sb-iss">ISS: calculando...</div>
+    <div id="sb-temp" style="margin-top:4px">La Cruz: --°C</div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+<!-- ===== SECCION: IA HUB ===== -->
+<section class="section active" id="s-ia">
+  <div class="mission">
+    <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--cyan);letter-spacing:.1em;margin-bottom:4px">ACHE · INTELIGENCIA ARTIFICIAL CENTRAL</div>
+    <div style="font-size:13px;color:var(--txt2)">Puente permanente hacia Claude y Groq. Auto-routing inteligente: Claude para análisis profundo, Groq para respuestas rápidas. Memoria persistente activada.</div>
+  </div>
+  <div class="chat-wrap">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="chat-history" id="chat-history">
+        <div class="msg msg-sys">▶ ACHE NEXUS IA conectado · Claude (auto) activo · Escribe tu consulta</div>
+      </div>
+      <div class="chat-input-wrap">
+        <textarea class="chat-input" id="chat-in" rows="2" placeholder="Pregunta a ACHE... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
+        <button class="btn btn-primary" id="btn-send" onclick="sendChat()">ENVIAR</button>
+      </div>
+    </div>
+    <div class="chat-controls">
+      <div>
+        <div class="ctrl-label">MOTOR IA</div>
+        <select class="ctrl-select" id="ia-mode">
+          <option value="auto">AUTO (Claude → Groq)</option>
+          <option value="claude">Claude Sonnet 4</option>
+          <option value="groq">Groq (Llama3/Mixtral)</option>
+        </select>
+      </div>
+      <div>
+        <div class="ctrl-label">GROQ API KEY</div>
+        <input class="ctrl-input" id="groq-key" type="password" placeholder="gsk_..." oninput="saveKey('groq',this.value)">
+        <div style="font-size:9px;color:var(--mut);margin-top:3px">groq.com · gratis</div>
+      </div>
+      <div>
+        <div class="ctrl-label">ANTHROPIC API KEY (local)</div>
+        <input class="ctrl-input" id="claude-key" type="password" placeholder="sk-ant-..." oninput="saveKey('claude',this.value)">
+        <div style="font-size:9px;color:var(--mut);margin-top:3px">Proxy via NEXUS :8080</div>
+      </div>
+      <div>
+        <div class="ctrl-label">CONTEXTO DEL SISTEMA</div>
+        <textarea class="ctrl-textarea" id="sys-prompt" rows="4" placeholder="Eres ACHE, asistente de COOPECRUCENOS R.L. para La Cruz, Guanacaste...">Eres ACHE, el sistema de inteligencia artificial de COOPECRUCENOS R.L. en La Cruz, Guanacaste, Costa Rica. Tu misión es apoyar el desarrollo de la cooperativa, reducir la brecha digital en zonas rurales, y generar valor económico sostenible. Responde en español, de forma clara y práctica.</textarea>
+      </div>
+      <div id="ia-status" class="badge badge-ok" style="width:100%;justify-content:center">● SISTEMA LISTO</div>
+      <button class="btn btn-secondary btn-sm" onclick="clearChat()">🗑 Limpiar historial</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECCION: COSMOS ===== -->
+<section class="section" id="s-cosmos">
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">🛰 ESTACION ESPACIAL INTERNACIONAL — POSICION EN VIVO</div>
+      <div id="iss-map">
+        <svg id="world-svg" viewBox="0 0 800 400" style="width:100%;height:100%">
+          <!-- Simple world map paths (simplified continents) -->
+          <rect width="800" height="400" fill="#020a0d"/>
+          <!-- Grid lines -->
+          <line x1="0" y1="200" x2="800" y2="200" stroke="#1a4060" stroke-width=".5"/>
+          <line x1="400" y1="0" x2="400" y2="400" stroke="#1a4060" stroke-width=".5"/>
+          <line x1="0" y1="100" x2="800" y2="100" stroke="#0a2030" stroke-width=".3"/>
+          <line x1="0" y1="300" x2="800" y2="300" stroke="#0a2030" stroke-width=".3"/>
+          <!-- Simplified continents (rough polygons) -->
+          <!-- North America -->
+          <polygon points="80,80 200,60 220,100 210,180 160,220 100,200 70,140" fill="#1a4060" stroke="#2a5080" stroke-width=".5"/>
+          <!-- South America -->
+          <polygon points="160,220 200,220 220,280 200,360 160,360 140,300 150,240" fill="#1a4060" stroke="#2a5080" stroke-width=".5"/>
+          <!-- Europe/Africa -->
+          <polygon points="360,60 420,60 440,100 430,140 400,140 370,120" fill="#1a4060" stroke="#2a5080" stroke-width=".5"/>
+          <polygon points="370,150 420,140 440,180 430,280 400,320 370,300 350,250 360,180" fill="#1a4060" stroke="#2a5080" stroke-width=".5"/>
+          <!-- Asia/Russia -->
+          <polygon points="440,40 700,40 720,100 700,160 600,180 500,160 440,120" fill="#1a4060" stroke="#2a5080" stroke-width=".5"/>
+          <!-- SE Asia -->
+          <polygon points="580,160 700,160 720,220 680,260 600,240 560,200" fill="#1a4060" stroke="#2a5080" stroke-width=".5"/>
+          <!-- Australia -->
+          <polygon points="600,260 700,260 720,320 680,360 600,340 580,300" fill="#1a4060" stroke="#2a5080" stroke-width=".5"/>
+          <!-- ISS orbit path (approximate) -->
+          <ellipse id="iss-orbit" cx="400" cy="200" rx="380" ry="120" fill="none" stroke="#ffb300" stroke-width=".6" stroke-dasharray="4 4" opacity=".4"/>
+          <!-- ISS marker -->
+          <g id="iss-marker" transform="translate(400,200)">
+            <circle r="6" fill="#00ff88" opacity=".3"/>
+            <circle r="3" fill="#00ff88"/>
+            <line x1="-10" y1="0" x2="10" y2="0" stroke="#00ff88" stroke-width="1"/>
+            <line x1="0" y1="-10" x2="0" y2="10" stroke="#00ff88" stroke-width="1"/>
+          </g>
+          <!-- Equator label -->
+          <text x="5" y="203" fill="#4a7090" font-size="8" font-family="JetBrains Mono">0°</text>
+          <text x="390" y="15" fill="#4a7090" font-size="8" font-family="JetBrains Mono">0°</text>
+        </svg>
+      </div>
+      <div class="grid4" style="margin-top:12px">
+        <div class="metric"><div class="metric-val" id="iss-lat">--</div><div class="metric-label">LATITUD</div></div>
+        <div class="metric"><div class="metric-val" id="iss-lon">--</div><div class="metric-label">LONGITUD</div></div>
+        <div class="metric"><div class="metric-val" id="iss-alt">--</div><div class="metric-label">ALTITUD KM</div></div>
+        <div class="metric"><div class="metric-val" id="iss-vel">--</div><div class="metric-label">VEL KM/H</div></div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;color:var(--mut);font-family:'JetBrains Mono',monospace;text-align:right" id="iss-updated">Actualizando...</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📸 NASA · IMAGEN ASTRONOMICA DEL DIA</div>
+      <div id="apod-wrap" style="text-align:center">
+        <div class="typing"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="card-sm">
+      <div class="card-title">DATOS ISS</div>
+      <div class="info-row"><div class="info-key">periodo orbital</div><div class="info-val">~92 min</div></div>
+      <div class="info-row"><div class="info-key">orbitas/dia</div><div class="info-val">15.5</div></div>
+      <div class="info-row"><div class="info-key">inclinacion</div><div class="info-val">51.6°</div></div>
+      <div class="info-row"><div class="info-key">masa</div><div class="info-val">420,000 kg</div></div>
+      <div class="info-row"><div class="info-key">tripulacion</div><div class="info-val">7 astronautas</div></div>
+    </div>
+    <div class="card-sm">
+      <div class="card-title">🌞 SISTEMA SOLAR</div>
+      <div id="solar-data"><div class="typing"><span></span><span></span><span></span></div></div>
+    </div>
+    <div class="card-sm">
+      <div class="card-title">📡 RADIOFRECUENCIAS ACHE</div>
+      <div class="info-row"><div class="info-key">ISS APRS</div><div class="info-val">145.825 MHz</div></div>
+      <div class="info-row"><div class="info-key">ISS voz EU</div><div class="info-val">145.800 MHz</div></div>
+      <div class="info-row"><div class="info-key">ISS voz US</div><div class="info-val">437.800 MHz</div></div>
+      <div class="info-row"><div class="info-key">NOAA WX</div><div class="info-val">162.400 MHz</div></div>
+      <div class="info-row"><div class="info-key">FM broadcast</div><div class="info-val">87.5-108 MHz</div></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--mut)">Frecuencias para proyectos de radioaficionados educativos</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECCION: PLANETA / SEÑAL GLOBAL ===== -->
+<section class="section" id="s-planeta">
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">🌤 CLIMA EN VIVO · LA CRUZ, GUANACASTE</div>
+      <div style="display:flex;align-items:flex-start;gap:20px">
+        <div>
+          <div class="weather-big" id="wx-temp">--</div>
+          <div class="weather-code" id="wx-desc">Cargando...</div>
+          <div style="margin-top:12px;font-size:12px;color:var(--txt2)">
+            <div>💨 Viento: <span id="wx-wind">--</span> km/h</div>
+            <div style="margin-top:4px">📍 11.03°N 85.63°W</div>
+          </div>
+        </div>
+        <div style="flex:1">
+          <div class="info-row"><div class="info-key">fuente</div><div class="info-val">Open-Meteo</div></div>
+          <div class="info-row"><div class="info-key">region</div><div class="info-val">Guanacaste CR</div></div>
+          <div class="info-row"><div class="info-key">zona horaria</div><div class="info-val">America/CR (UTC-6)</div></div>
+          <div class="info-row"><div class="info-key">actualiza</div><div class="info-val">cada 15 min</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 MERCADOS · DATOS GLOBALES</div>
+      <div class="grid2" style="gap:8px" id="crypto-grid">
+        <div class="typing"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔍 WIKIPEDIA UNIVERSAL</div>
+    <div class="search-bar">
+      <input class="search-input" id="wiki-search" placeholder="Buscar en Wikipedia...">
+      <button class="btn btn-primary" onclick="searchWiki()">BUSCAR</button>
+    </div>
+    <div id="wiki-result" style="font-size:13px;color:var(--txt2);line-height:1.7"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🌐 FEEDS DE DATOS ABIERTOS</div>
+    <div class="grid3" id="feeds-grid">
+      <div class="card-sm">
+        <div style="font-size:11px;color:var(--cyan);font-weight:500;margin-bottom:6px">BANCO MUNDIAL</div>
+        <div style="font-size:12px;color:var(--txt2)">PIB Costa Rica (2023)</div>
+        <div class="metric-val" style="font-size:20px;margin-top:4px">$66.8B</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:4px">USD · Fuente: World Bank</div>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:11px;color:var(--cyan);font-weight:500;margin-bottom:6px">BRECHA DIGITAL CR</div>
+        <div style="font-size:12px;color:var(--txt2)">Zonas rurales con internet</div>
+        <div class="metric-val" style="font-size:20px;margin-top:4px;color:var(--amber)">~42%</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:4px">vs 89% zonas urbanas · MICITT</div>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:11px;color:var(--cyan);font-weight:500;margin-bottom:6px">META COOPECRUCENOS</div>
+        <div style="font-size:12px;color:var(--txt2)">Niños conectados meta 2026</div>
+        <div class="metric-val" style="font-size:20px;margin-top:4px;color:var(--grn)">500+</div>
+        <div style="font-size:10px;color:var(--mut);margin-top:4px">La Cruz, Guanacaste</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECCION: API GALAXY ===== -->
+<section class="section" id="s-apis">
+  <div class="mission">
+    <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--amber);letter-spacing:.1em;margin-bottom:4px">BUSCADOR UNIVERSAL DE APIs ABIERTAS</div>
+    <div style="font-size:13px;color:var(--txt2)">Descubre y conecta con miles de APIs gratuitas del mundo. Conéctate a datos, servicios y plataformas sin costo.</div>
+  </div>
+  <div class="search-bar">
+    <select class="ctrl-select" id="api-cat" style="width:180px" onchange="searchAPIs()">
+      <option value="">Todas las categorías</option>
+      <option value="Science">Ciencia</option>
+      <option value="Weather">Clima</option>
+      <option value="Space">Espacio</option>
+      <option value="Education">Educación</option>
+      <option value="Finance">Finanzas</option>
+      <option value="Health">Salud</option>
+      <option value="Environment">Ambiente</option>
+      <option value="News">Noticias</option>
+      <option value="Open Data">Datos Abiertos</option>
+      <option value="Social">Social</option>
+      <option value="Music">Música</option>
+    </select>
+    <input class="search-input" id="api-search" placeholder="Buscar API por nombre o función...">
+    <button class="btn btn-primary" onclick="searchAPIs()">EXPLORAR</button>
+  </div>
+  <!-- Pre-loaded curated APIs -->
+  <div class="apis-grid" id="apis-grid">
+    <!-- Cargado por JS -->
+  </div>
+  <div style="text-align:center;margin-top:8px">
+    <button class="btn btn-secondary" onclick="loadMoreAPIs()" id="btn-more-apis">CARGAR MÁS APIs</button>
+  </div>
+</section>
+
+<!-- ===== SECCION: RED ACHE ===== -->
+<section class="section" id="s-red">
+  <div class="mission">
+    <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--grn);letter-spacing:.1em;margin-bottom:4px">RED ACHE · MONITOR DE SERVICIOS LOCALES</div>
+    <div style="font-size:13px;color:var(--txt2)">Estado en tiempo real de todos los servicios ACHE en GONZAGA-CBM-Ω-001. Verificando puertos localhost...</div>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:4px">
+    <button class="btn btn-secondary btn-sm" onclick="scanNetwork()">🔄 ESCANEAR RED</button>
+    <button class="btn btn-grn btn-sm" onclick="openService(8080)">▶ Abrir NEXUS :8080</button>
+    <button class="btn btn-grn btn-sm" onclick="openService(5299)">▶ Abrir META :5299</button>
+  </div>
+  <div id="network-grid" style="display:flex;flex-direction:column;gap:6px">
+    <div class="typing"><span></span><span></span><span></span></div>
+  </div>
+  <div class="grid2" style="margin-top:4px">
+    <div class="card-sm">
+      <div class="card-title">ARCHIVOS HTML ACTIVOS</div>
+      <div id="html-list">
+        <div class="info-row"><div class="info-key">Hotel Aurora v3</div><div class="info-val"><span class="badge badge-ok">listo</span></div></div>
+        <div class="info-row"><div class="info-key">ACHE NEXUS</div><div class="info-val"><span class="badge badge-ok">listo</span></div></div>
+        <div class="info-row"><div class="info-key">ACHE Madre Gov</div><div class="info-val"><span class="badge badge-ok">listo</span></div></div>
+        <div class="info-row"><div class="info-key">ACHE Money Mobile</div><div class="info-val"><span class="badge badge-ok">listo</span></div></div>
+        <div class="info-row"><div class="info-key">ACHE Trailero</div><div class="info-val"><span class="badge badge-ok">listo</span></div></div>
+      </div>
+    </div>
+    <div class="card-sm">
+      <div class="card-title">INSTRUCCIONES BOOT</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--grn);line-height:2">
+        <div># Matar conflictos</div>
+        <div style="color:var(--cyan)">.\ACHE_BOOT.ps1 -Kill</div>
+        <div># Configurar keys</div>
+        <div style="color:var(--cyan)">.\ACHE_BOOT.ps1 -SetKey</div>
+        <div># Arranque completo</div>
+        <div style="color:var(--cyan)">.\ACHE_BOOT.ps1</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECCION: EDU LAB ===== -->
+<section class="section" id="s-edu">
+  <div style="text-align:center;padding:10px 0">
+    <div style="font-family:'Orbitron',monospace;font-size:22px;color:var(--cyan);letter-spacing:4px">🎓 LABORATORIO EDUCATIVO ACHE</div>
+    <div style="font-size:14px;color:var(--txt2);margin-top:6px">Para los niños de La Cruz, Guanacaste · Explorando el mundo con tecnología</div>
+  </div>
+  <div class="edu-grid">
+    <div class="edu-card" onclick="eduShow('iss')">
+      <div class="edu-icon">🛰</div>
+      <div class="edu-title">¿Dónde está la ISS?</div>
+      <div class="edu-desc">Mira la Estación Espacial Internacional en tiempo real</div>
+    </div>
+    <div class="edu-card" onclick="eduShow('clima')">
+      <div class="edu-icon">🌤</div>
+      <div class="edu-title">Clima de La Cruz</div>
+      <div class="edu-desc">El tiempo en nuestro pueblo ahora mismo</div>
+    </div>
+    <div class="edu-card" onclick="eduShow('espacio')">
+      <div class="edu-icon">🌌</div>
+      <div class="edu-title">El Universo</div>
+      <div class="edu-desc">Datos del espacio exterior y el sistema solar</div>
+    </div>
+    <div class="edu-card" onclick="eduShow('preguntas')">
+      <div class="edu-icon">🤖</div>
+      <div class="edu-title">Pregúntale a ACHE</div>
+      <div class="edu-desc">Haz preguntas de ciencia, matemáticas, historia...</div>
+    </div>
+    <div class="edu-card" onclick="eduShow('datos')">
+      <div class="edu-icon">📊</div>
+      <div class="edu-title">Datos del Mundo</div>
+      <div class="edu-desc">Estadísticas curiosas del planeta</div>
+    </div>
+    <div class="edu-card" onclick="eduShow('wikipedia')">
+      <div class="edu-icon">📚</div>
+      <div class="edu-title">Enciclopedia</div>
+      <div class="edu-desc">Busca cualquier tema en Wikipedia</div>
+    </div>
+  </div>
+  <div class="edu-chat" id="edu-content">
+    <div style="text-align:center;color:var(--mut);font-size:15px;padding:20px">👆 Elige una tarjeta para empezar a explorar</div>
+  </div>
+  <div id="edu-ai-chat" style="display:none">
+    <div class="edu-chat" style="margin-top:0">
+      <div class="card-title">🤖 ACHE responde tus preguntas</div>
+      <div id="edu-chat-history" style="min-height:80px;margin-bottom:10px;font-size:15px;line-height:1.7;color:var(--txt2)"></div>
+      <div style="display:flex;gap:8px">
+        <input class="search-input" id="edu-question" placeholder="¿Cómo funciona...? ¿Por qué...? ¿Qué es...?" style="font-size:15px">
+        <button class="btn btn-primary" onclick="eduAsk()">PREGUNTAR</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SECCION: PROYECTOS ===== -->
+<section class="section" id="s-proyectos">
+  <div class="mission">
+    <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--amber);letter-spacing:.1em;margin-bottom:4px">COOPECRUCENOS · GENERACIÓN DE VALOR ECONÓMICO</div>
+    <div style="font-size:13px;color:var(--txt2)">Proyectos de ACHE que pueden generar ingresos reales para la cooperativa y reducir la brecha digital en La Cruz y zonas rurales de Guanacaste.</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div class="project-card">
+      <div class="project-title">💻 SaaS: ACHE Hotel — Sistema de Gestión Hotelera Rural</div>
+      <div class="project-desc">Versión SaaS del sistema del Hotel Aurora para otras posadas y B&B en Guanacaste. Pago mensual por suscripción. Incluye calendario de reservas, reportes, chat con IA y acceso desde celular.</div>
+      <div class="project-impact">
+        <span class="impact-tag">💰 $30-80/mes por hotel</span>
+        <span class="impact-tag">🎯 50+ posadas en Guanacaste</span>
+        <span class="impact-tag">📱 Funciona en celular</span>
+        <span class="impact-tag">🌐 Deploy en Railway</span>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="project-title">📡 ACHE EDU — Plataforma Educativa Rural con IA</div>
+      <div class="project-desc">Plataforma de educación con IA para escuelas rurales de La Cruz. Contenido adaptado a currículum MEP, acceso offline, laboratorio de ciencias virtual. Financiable por MEP, MICITT o cooperación internacional.</div>
+      <div class="project-impact">
+        <span class="impact-tag">🎓 500+ niños impactados</span>
+        <span class="impact-tag">🏫 Escuelas rurales CR</span>
+        <span class="impact-tag">💵 Fondos MEP/MICITT</span>
+        <span class="impact-tag">🌍 Reduce brecha digital</span>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="project-title">🌾 ACHE CAMPO — Asistente Agrícola Inteligente</div>
+      <div class="project-desc">IA para pequeños agricultores de Guanacaste: alertas de clima, precios de mercado, guías de cultivo, detección de plagas por foto. Modelo freemium con versión premium para cooperativas.</div>
+      <div class="project-impact">
+        <span class="impact-tag">🌿 Sector agro CR</span>
+        <span class="impact-tag">📱 App/WhatsApp Bot</span>
+        <span class="impact-tag">💰 $15/mes premium</span>
+        <span class="impact-tag">🌾 Impacto campesinos</span>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="project-title">🔌 ACHE API HUB — Marketplace de Datos Locales</div>
+      <div class="project-desc">Recolecta y vende datos locales (turismo, clima, tráfico, precios locales) como API a investigadores, empresas y gobierno. COOPECRUCENOS como proveedor de datos rurales de calidad.</div>
+      <div class="project-impact">
+        <span class="impact-tag">📊 Datos locales únicos</span>
+        <span class="impact-tag">🏛 Gobierno/Academia</span>
+        <span class="impact-tag">💵 $500-2000/mes</span>
+        <span class="impact-tag">📡 Infraestructura existente</span>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="project-title">🤝 ACHE GOBIERNO — Digitalización Municipal La Cruz</div>
+      <div class="project-desc">Sistema de gestión para la Municipalidad de La Cruz: trámites digitales, mapa de servicios, portal ciudadano con IA. Contrato con la municipalidad o financiamiento BID/BCIE.</div>
+      <div class="project-impact">
+        <span class="impact-tag">🏛 Municipalidad</span>
+        <span class="impact-tag">👥 15,000+ habitantes</span>
+        <span class="impact-tag">💵 $2000-5000/mes</span>
+        <span class="impact-tag">🌐 Gobierno digital CR</span>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:4px">
+    <div class="card-title">💡 GENERA IDEAS CON IA</div>
+    <div class="search-bar">
+      <input class="search-input" id="project-query" placeholder="Describe un problema local y ACHE genera una solución de negocio...">
+      <button class="btn btn-primary" onclick="generateProjectIdea()">GENERAR IDEA</button>
+    </div>
+    <div id="project-idea-result" style="font-size:13px;color:var(--txt2);line-height:1.7;margin-top:8px"></div>
+  </div>
+</section>
+
+</main><!-- /app -->
+
+<!-- CONFIG MODAL -->
+<div id="cfg-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:24px;width:460px;max-width:95vw">
+    <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--cyan);margin-bottom:16px">⚙ CONFIGURACION ACHE TOTAL</div>
+    <div class="ctrl-label">ANTHROPIC API KEY</div>
+    <input class="ctrl-input" id="cfg-claude" type="password" placeholder="sk-ant-..." style="margin-bottom:12px">
+    <div class="ctrl-label">GROQ API KEY</div>
+    <input class="ctrl-input" id="cfg-groq" type="password" placeholder="gsk_..." style="margin-bottom:12px">
+    <div class="ctrl-label">OPENWEATHER API KEY (opcional)</div>
+    <input class="ctrl-input" id="cfg-wx" type="text" placeholder="Opcional para clima avanzado" style="margin-bottom:16px">
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="saveConfig()">GUARDAR</button>
+      <button class="btn btn-secondary" onclick="closeCfg()">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ACHE CONEXION TOTAL v1.0 — Core Engine
+// COOPECRUCENOS R.L. · La Cruz, Guanacaste, Costa Rica
+// ============================================================
+
+const STORE = {
+  get:(k,d='')=>{ try{return localStorage.getItem('ache_'+k)||d}catch{return d} },
+  set:(k,v)=>{ try{localStorage.setItem('ache_'+k,v)}catch{} },
+  getJSON:(k,d={})=>{ try{return JSON.parse(localStorage.getItem('ache_'+k)||JSON.stringify(d))}catch{return d} },
+  setJSON:(k,v)=>{ try{localStorage.setItem('ache_'+k,JSON.stringify(v))}catch{} }
+};
+
+let chatHistory = [];
+let kidMode = false;
+let currentSection = 'ia';
+
+// ── NAVIGATION ──────────────────────────────────────────────
+function show(sec) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('s-'+sec).classList.add('active');
+  document.getElementById('nav-'+sec).classList.add('active');
+  currentSection = sec;
+  if(sec==='cosmos') loadCosmos();
+  if(sec==='planeta') loadPlaneta();
+  if(sec==='apis') loadAPIs();
+  if(sec==='red') scanNetwork();
+}
+
+// ── CLOCK ────────────────────────────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const cr = new Date(now.toLocaleString('en-US',{timeZone:'America/Costa_Rica'}));
+  const t = cr.toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.getElementById('hdr-time').textContent = `${t} · CR`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── KID MODE ────────────────────────────────────────────────
+function toggleKid() {
+  kidMode = !kidMode;
+  document.body.classList.toggle('kid-mode', kidMode);
+  document.getElementById('btn-kid').textContent = kidMode ? '👔 MODO NORMAL' : '🎓 MODO NIÑOS';
+  if(kidMode) show('edu');
+}
+
+// ── CONFIG ───────────────────────────────────────────────────
+function openConfig() {
+  document.getElementById('cfg-claude').value = STORE.get('claude_key');
+  document.getElementById('cfg-groq').value   = STORE.get('groq_key');
+  document.getElementById('cfg-wx').value     = STORE.get('wx_key');
+  document.getElementById('cfg-modal').style.display = 'flex';
+}
+function closeCfg() { document.getElementById('cfg-modal').style.display='none'; }
+function saveConfig() {
+  STORE.set('claude_key', document.getElementById('cfg-claude').value);
+  STORE.set('groq_key',   document.getElementById('cfg-groq').value);
+  STORE.set('wx_key',     document.getElementById('cfg-wx').value);
+  document.getElementById('groq-key').value   = document.getElementById('cfg-groq').value;
+  document.getElementById('claude-key').value = document.getElementById('cfg-claude').value;
+  closeCfg();
+  addMsg('sys','Configuración guardada. Claves API actualizadas.');
+}
+function saveKey(type,val) { STORE.set(type+'_key', val); }
+
+// Load keys on init
+window.addEventListener('load',()=>{
+  const g=STORE.get('groq_key'), c=STORE.get('claude_key');
+  if(g) document.getElementById('groq-key').value=g;
+  if(c) document.getElementById('claude-key').value=c;
+  startISS();
+  loadWeatherSidebar();
+});
+
+// ── IA CHAT ENGINE ─────────────────────────────────────────
+async function callClaude(messages, sys='') {
+  const key = STORE.get('claude_key') || document.getElementById('claude-key').value;
+  const headers = {'Content-Type':'application/json','anthropic-version':'2023-06-01'};
+  if(key) headers['x-api-key'] = key;
+
+  // Try artifact API first (no key needed in Claude.ai)
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers,
+      body: JSON.stringify({
+        model:'claude-sonnet-4-20250514', max_tokens:1000,
+        system: sys || document.getElementById('sys-prompt').value,
+        messages
+      })
+    });
+    if(r.ok) {
+      const d = await r.json();
+      return { text: d.content[0].text, provider:'Claude' };
+    }
+  } catch(e) {}
+
+  // Try via ACHE NEXUS proxy
+  const ports = [8080,5299,5099];
+  for(const port of ports) {
+    try {
+      const r = await fetch(`http://localhost:${port}/claude`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ prompt: messages[messages.length-1].content, system: sys })
+      });
+      if(r.ok) {
+        const d = await r.json();
+        return { text: d.reply||d.content||d.text||JSON.stringify(d), provider:`Claude via NEXUS:${port}` };
+      }
+    } catch(e) {}
+  }
+  return null;
+}
+
+async function callGroq(messages, sys='') {
+  const key = STORE.get('groq_key') || document.getElementById('groq-key').value;
+  if(!key) return null;
+  try {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+      body: JSON.stringify({
+        model:'llama3-70b-8192', max_tokens:1000,
+        messages: [
+          {role:'system', content: sys||document.getElementById('sys-prompt').value},
+          ...messages
+        ]
+      })
+    });
+    if(r.ok) {
+      const d = await r.json();
+      return { text: d.choices[0].message.content, provider:'Groq · Llama3-70B' };
+    }
+  } catch(e) {}
+  return null;
+}
+
+async function callAI(prompt, sys='', forceProvider=null) {
+  const msgs = [...chatHistory, {role:'user', content:prompt}];
+  const mode = forceProvider || document.getElementById('ia-mode').value;
+  let result = null;
+
+  if(mode==='groq') {
+    result = await callGroq(msgs, sys);
+  } else if(mode==='claude') {
+    result = await callClaude(msgs, sys);
+  } else {
+    // AUTO: try Claude first, fallback to Groq
+    result = await callClaude(msgs, sys);
+    if(!result) result = await callGroq(msgs, sys);
+  }
+  return result;
+}
+
+// ── CHAT UI ──────────────────────────────────────────────────
+function addMsg(type, text, provider='') {
+  const h = document.getElementById('chat-history');
+  const div = document.createElement('div');
+  div.className = `msg msg-${type}`;
+  if(provider) {
+    const p = document.createElement('div');
+    p.className = 'msg-provider';
+    p.textContent = '▲ '+provider;
+    div.appendChild(p);
+  }
+  const t = document.createElement('div');
+  t.innerHTML = text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`(.*?)`/g,'<code style="background:rgba(0,229,255,.1);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:12px">$1</code>');
+  div.appendChild(t);
+  h.appendChild(div);
+  h.scrollTop = h.scrollHeight;
+}
+
+function showTyping() {
+  const h = document.getElementById('chat-history');
+  const div = document.createElement('div');
+  div.id = 'typing-indicator';
+  div.className = 'msg msg-ai';
+  div.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  h.appendChild(div);
+  h.scrollTop = h.scrollHeight;
+}
+function hideTyping() {
+  const t = document.getElementById('typing-indicator');
+  if(t) t.remove();
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-in');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  addMsg('user', text);
+  chatHistory.push({role:'user',content:text});
+  const btn = document.getElementById('btn-send');
+  btn.classList.add('btn-loading');
+  btn.textContent='...';
+  showTyping();
+  const r = await callAI(text);
+  hideTyping();
+  btn.classList.remove('btn-loading');
+  btn.textContent='ENVIAR';
+  if(r) {
+    addMsg('ai', r.text, r.provider);
+    chatHistory.push({role:'assistant',content:r.text});
+    if(chatHistory.length>20) chatHistory = chatHistory.slice(-20);
+    STORE.setJSON('chat_history', chatHistory);
+  } else {
+    addMsg('sys','⚠ No se pudo conectar con la IA. Configura tu Groq API Key o verifica el NEXUS :8080');
+  }
+}
+
+document.getElementById('chat-in').addEventListener('keydown', e=>{
+  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendChat(); }
+});
+
+function clearChat() {
+  chatHistory = [];
+  STORE.set('chat_history','[]');
+  document.getElementById('chat-history').innerHTML='<div class="msg msg-sys">▶ Historial limpiado · ACHE NEXUS IA listo</div>';
+}
+
+// ── ISS TRACKER ──────────────────────────────────────────────
+let issInterval;
+function latLonToXY(lat,lon) {
+  const x = (lon+180)/360*800;
+  const y = (90-lat)/180*400;
+  return {x,y};
+}
+
+async function fetchISS() {
+  try {
+    const r = await fetch('https://api.wheretheiss.at/v1/satellites/25544');
+    if(!r.ok) return;
+    const d = await r.json();
+    const {x,y} = latLonToXY(d.latitude, d.longitude);
+    const marker = document.getElementById('iss-marker');
+    if(marker) marker.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)})`);
+    const fmt = v=>parseFloat(v).toFixed(2);
+    const el = id=>document.getElementById(id);
+    if(el('iss-lat')) el('iss-lat').textContent = fmt(d.latitude)+'°';
+    if(el('iss-lon')) el('iss-lon').textContent = fmt(d.longitude)+'°';
+    if(el('iss-alt')) el('iss-alt').textContent = Math.round(d.altitude);
+    if(el('iss-vel')) el('iss-vel').textContent = Math.round(d.velocity);
+    if(el('iss-updated')) el('iss-updated').textContent = 'Actualizado: '+new Date().toLocaleTimeString('es-CR');
+    // Sidebar
+    const sb = document.getElementById('sb-iss');
+    if(sb) sb.textContent = `ISS: ${fmt(d.latitude)}°N ${fmt(d.longitude)}°E`;
+  } catch(e) {}
+}
+
+function startISS() {
+  fetchISS();
+  issInterval = setInterval(fetchISS, 5000);
+}
+
+// ── SOLAR SYSTEM ─────────────────────────────────────────────
+async function loadSolar() {
+  try {
+    const r = await fetch('https://api.le-systeme-solaire.net/rest/bodies/earth');
+    if(!r.ok) return;
+    const d = await r.json();
+    const el = document.getElementById('solar-data');
+    if(!el) return;
+    el.innerHTML = `
+      <div class="info-row"><div class="info-key">planeta</div><div class="info-val">${d.englishName}</div></div>
+      <div class="info-row"><div class="info-key">masa</div><div class="info-val">${(d.mass?.massValue||5.97).toFixed(2)}×10${d.mass?.massExponent||24}</div></div>
+      <div class="info-row"><div class="info-key">radio</div><div class="info-val">${Math.round(d.meanRadius).toLocaleString()} km</div></div>
+      <div class="info-row"><div class="info-key">lunas</div><div class="info-val">${d.moons?.length||1}</div></div>
+      <div class="info-row"><div class="info-key">periodo</div><div class="info-val">${Math.round(d.sideralOrbit||365)} dias</div></div>
+    `;
+  } catch(e) {
+    const el = document.getElementById('solar-data');
+    if(el) el.innerHTML='<div style="font-size:11px;color:var(--mut)">API no disponible</div>';
+  }
+}
+
+// ── NASA APOD ────────────────────────────────────────────────
+async function loadAPOD() {
+  try {
+    const r = await fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY');
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    const el = document.getElementById('apod-wrap');
+    if(!el) return;
+    const isImg = d.media_type==='image';
+    el.innerHTML = `
+      <div style="margin-bottom:10px">
+        ${isImg ? `<img src="${d.url}" style="width:100%;border-radius:8px;max-height:220px;object-fit:cover">` : `<div style="color:var(--mut);font-size:12px">Media: ${d.media_type}</div>`}
+      </div>
+      <div style="font-size:13px;font-weight:500;color:var(--txt);margin-bottom:6px">${d.title||'Sin título'}</div>
+      <div style="font-size:11px;color:var(--txt2);line-height:1.5">${(d.explanation||'').substring(0,250)}...</div>
+      <div style="font-size:10px;color:var(--mut);margin-top:6px;font-family:'JetBrains Mono',monospace">Fuente: NASA APOD · ${d.date||''}</div>
+    `;
+  } catch(e) {
+    const el = document.getElementById('apod-wrap');
+    if(el) el.innerHTML=`
+      <div style="padding:20px;text-align:center">
+        <div style="font-size:40px">🔭</div>
+        <div style="color:var(--mut);font-size:12px;margin-top:8px">Imagen NASA del dia</div>
+        <div style="color:var(--txt2);font-size:11px;margin-top:4px">api.nasa.gov/planetary/apod</div>
+        <div style="color:var(--mut);font-size:10px;margin-top:4px">DEMO_KEY · limite de llamadas alcanzado</div>
+      </div>`;
+  }
+}
+
+function loadCosmos() {
+  loadAPOD();
+  loadSolar();
+}
+
+// ── WEATHER ──────────────────────────────────────────────────
+const WX_CODES = {
+  0:'Despejado',1:'Mayormente despejado',2:'Parcialmente nublado',3:'Nublado',
+  45:'Niebla',48:'Escarcha',51:'Llovizna leve',53:'Llovizna moderada',55:'Llovizna intensa',
+  61:'Lluvia leve',63:'Lluvia moderada',65:'Lluvia fuerte',71:'Nieve',
+  80:'Chubascos leves',81:'Chubascos moderados',82:'Chubascos fuertes',
+  95:'Tormenta',96:'Tormenta con granizo',99:'Tormenta fuerte'
+};
+
+async function loadWeather() {
+  try {
+    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=11.03&longitude=-85.63&current=temperature_2m,wind_speed_10m,weather_code&forecast_days=1&timezone=America/Costa_Rica');
+    if(!r.ok) return;
+    const d = await r.json();
+    const cur = d.current;
+    const temp = Math.round(cur.temperature_2m);
+    const wind = Math.round(cur.wind_speed_10m);
+    const desc = WX_CODES[cur.weather_code]||'Condiciones variables';
+    const el=id=>document.getElementById(id);
+    if(el('wx-temp')) el('wx-temp').textContent = temp+'°C';
+    if(el('wx-desc')) el('wx-desc').textContent = desc;
+    if(el('wx-wind')) el('wx-wind').textContent = wind;
+    if(el('sb-temp')) el('sb-temp').textContent = `La Cruz: ${temp}°C`;
+  } catch(e) {}
+}
+
+async function loadWeatherSidebar() { loadWeather(); }
+setInterval(loadWeather, 900000); // cada 15 min
+
+// ── CRYPTO ───────────────────────────────────────────────────
+async function loadCrypto() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,cardano&vs_currencies=usd&include_24hr_change=true');
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    const el = document.getElementById('crypto-grid');
+    if(!el) return;
+    const coins = [{id:'bitcoin',name:'BTC',icon:'₿'},{id:'ethereum',name:'ETH',icon:'Ξ'},{id:'cardano',name:'ADA',icon:'◎'}];
+    el.innerHTML = coins.map(c=>{
+      const coin = d[c.id];
+      if(!coin) return '';
+      const chg = coin.usd_24h_change||0;
+      const chgColor = chg>=0?'var(--grn)':'var(--red)';
+      return `<div class="card-sm" style="text-align:center">
+        <div style="font-size:20px">${c.icon}</div>
+        <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--cyan)">${c.name}</div>
+        <div style="font-size:18px;font-weight:700;color:var(--txt);margin:4px 0">$${Math.round(coin.usd).toLocaleString()}</div>
+        <div style="font-size:11px;color:${chgColor}">${chg>=0?'+':''}${chg.toFixed(2)}%</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    const el = document.getElementById('crypto-grid');
+    if(el) el.innerHTML='<div style="color:var(--mut);font-size:12px;grid-column:1/-1">Datos en espera (rate limit CoinGecko)</div>';
+  }
+}
+
+function loadPlaneta() {
+  loadWeather();
+  loadCrypto();
+}
+
+// ── WIKIPEDIA ────────────────────────────────────────────────
+async function searchWiki() {
+  const q = document.getElementById('wiki-search').value.trim();
+  if(!q) return;
+  const el = document.getElementById('wiki-result');
+  el.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  try {
+    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+    if(!r.ok) throw new Error();
+    const d = await r.json();
+    el.innerHTML = `
+      <div style="font-size:16px;font-weight:600;color:var(--txt);margin-bottom:8px">${d.title}</div>
+      <div>${d.extract||'Sin descripción disponible.'}</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--mut)">
+        Fuente: Wikipedia · <a href="${d.content_urls?.desktop?.page||'#'}" target="_blank" style="color:var(--cyan)">Leer artículo completo →</a>
+      </div>
+    `;
+  } catch(e) {
+    // Try Spanish Wikipedia
+    try {
+      const r = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+      const d = await r.json();
+      el.innerHTML = `<div style="font-size:16px;font-weight:600;color:var(--txt);margin-bottom:8px">${d.title}</div><div>${d.extract||'Sin descripción'}</div>`;
+    } catch {
+      el.innerHTML = '<div style="color:var(--mut)">No se encontró el artículo. Intenta en inglés.</div>';
+    }
+  }
+}
+document.getElementById('wiki-search').addEventListener('keydown',e=>{ if(e.key==='Enter') searchWiki(); });
+
+// ── API GALAXY ────────────────────────────────────────────────
+const CURATED_APIS = [
+  {name:'Open-Meteo',desc:'Clima global gratuito sin API key. Alta precisión para cualquier coordenada.',tags:['clima','gratis','sin-key'],url:'https://open-meteo.com',cors:true},
+  {name:'NASA APIs',desc:'Datos de la NASA: imágenes astronómicas, planetas, misiones espaciales.',tags:['espacio','ciencia','nasa'],url:'https://api.nasa.gov',cors:true},
+  {name:'ISS Location',desc:'Posición en tiempo real de la Estación Espacial Internacional.',tags:['espacio','tiempo-real','sin-key'],url:'https://wheretheiss.at',cors:true},
+  {name:'Wikipedia REST',desc:'Busca artículos de Wikipedia en todos los idiomas vía REST API.',tags:['educacion','texto','sin-key'],url:'https://www.mediawiki.org/wiki/API',cors:true},
+  {name:'Sistema Solar',desc:'Datos precisos de planetas, lunas y cuerpos celestes del sistema solar.',tags:['espacio','ciencia','gratis'],url:'https://api.le-systeme-solaire.net',cors:true},
+  {name:'CoinGecko',desc:'Precios de criptomonedas, datos de mercado, historial. Sin API key.',tags:['finanzas','cripto','sin-key'],url:'https://coingecko.com',cors:true},
+  {name:'OpenFDA',desc:'Datos farmacéuticos de la FDA: medicamentos, efectos, retiros del mercado.',tags:['salud','gobierno','gratis'],url:'https://open.fda.gov',cors:true},
+  {name:'GBIF',desc:'Biodiversidad global: especies, observaciones, taxonomía. Miles de registros CR.',tags:['biologia','ambiente','ciencia'],url:'https://gbif.org',cors:true},
+  {name:'OpenStreetMap',desc:'Mapas y geolocalización abiertos. Sin límites, sin key necesaria.',tags:['mapas','geo','sin-key'],url:'https://nominatim.openstreetmap.org',cors:true},
+  {name:'REST Countries',desc:'Información de todos los países: población, capital, moneda, idiomas.',tags:['geografia','educacion','sin-key'],url:'https://restcountries.com',cors:true},
+  {name:'Open Library',desc:'Millones de libros digitalizados. Metadatos, portadas, préstamos.',tags:['educacion','libros','sin-key'],url:'https://openlibrary.org/developers',cors:true},
+  {name:'TheMealDB',desc:'Recetas de cocina de todo el mundo con imágenes. Sin API key.',tags:['comida','educacion','gratis'],url:'https://themealdb.com',cors:true},
+  {name:'Quotable',desc:'Citas inspiradoras de pensadores, científicos y líderes mundiales.',tags:['educacion','frases','sin-key'],url:'https://api.quotable.io',cors:true},
+  {name:'PokéAPI',desc:'Datos completos de Pokémon. Ideal para proyectos educativos y demos.',tags:['juegos','educacion','sin-key'],url:'https://pokeapi.co',cors:true},
+  {name:'Art Institute Chicago',desc:'80,000+ obras de arte digitalizadas con licencia abierta.',tags:['arte','cultura','sin-key'],url:'https://api.artic.edu',cors:true},
+  {name:'Groq API',desc:'LLMs de alta velocidad: Llama3, Mixtral. Plan gratuito generoso.',tags:['ia','llm','gratis'],url:'https://groq.com',cors:true},
+  {name:'Anthropic Claude',desc:'Claude Sonnet/Haiku para tareas complejas de análisis y generación.',tags:['ia','llm','claude'],url:'https://anthropic.com',cors:false},
+  {name:'USGS Earthquake',desc:'Sismos en tiempo real de todo el mundo. USGS.',tags:['ciencia','tiempo-real','gobierno'],url:'https://earthquake.usgs.gov',cors:true},
+  {name:'EONET NASA',desc:'Eventos naturales: volcanes, tormentas, incendios. Tiempo real.',tags:['ambiente','espacio','nasa'],url:'https://eonet.gsfc.nasa.gov',cors:true},
+  {name:'COPENABSA',desc:'Datos meteorológicos oficiales Costa Rica. IMN.',tags:['clima','costarica','gobierno'],url:'https://imn.ac.cr',cors:false},
+];
+
+let apisOffset = 0;
+function loadAPIs() {
+  const grid = document.getElementById('apis-grid');
+  if(!grid) return;
+  apisOffset = 0;
+  const q = (document.getElementById('api-search')||{}).value||'';
+  const cat = (document.getElementById('api-cat')||{}).value||'';
+  renderAPIs(q, cat);
+}
+
+function renderAPIs(q='',cat='') {
+  const grid = document.getElementById('apis-grid');
+  if(!grid) return;
+  const filtered = CURATED_APIS.filter(a=>{
+    const matchQ = !q || a.name.toLowerCase().includes(q.toLowerCase()) || a.desc.toLowerCase().includes(q.toLowerCase()) || a.tags.some(t=>t.includes(q.toLowerCase()));
+    return matchQ;
+  });
+  grid.innerHTML = filtered.map(a=>`
+    <div class="api-card" onclick="window.open('${a.url}','_blank')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="api-name">${a.name}</div>
+        <span class="badge ${a.cors?'badge-ok':'badge-warn'}" style="font-size:9px">${a.cors?'CORS OK':'PROXY'}</span>
+      </div>
+      <div class="api-desc">${a.desc}</div>
+      <div class="api-tags">${a.tags.map(t=>`<span class="api-tag">${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function searchAPIs() {
+  const q = document.getElementById('api-search').value||'';
+  const cat = document.getElementById('api-cat').value||'';
+  renderAPIs(q,cat);
+}
+
+document.addEventListener('input',e=>{ if(e.target.id==='api-search') searchAPIs(); });
+function loadMoreAPIs() {
+  // Fetch from publicapis.org
+  const cat = document.getElementById('api-cat').value;
+  const url = `https://api.publicapis.org/entries${cat?'?category='+encodeURIComponent(cat):''}`;
+  fetch(url).then(r=>r.json()).then(d=>{
+    const extra = (d.entries||[]).slice(0,12).map(a=>({
+      name:a.API, desc:a.Description, tags:[a.Category.toLowerCase()], url:a.Link||'#', cors:a.Cors!=='no'
+    }));
+    extra.forEach(a=>{ if(!CURATED_APIS.find(x=>x.name===a.name)) CURATED_APIS.push(a); });
+    renderAPIs('',cat);
+  }).catch(()=>{
+    addMsg('sys','API Galaxy: publicapis.org temporalmente no disponible. Mostrando catálogo interno.');
+  });
+}
+
+// ── NETWORK MONITOR ──────────────────────────────────────────
+const ACHE_SERVICES = [
+  {port:8080, name:'AURORA NEXUS v1.0 (Flask/Python)'},
+  {port:5299, name:'ACHE META FINAL (Node.js Express)'},
+  {port:5099, name:'ACHE BRAIN (Node.js Express)'},
+  {port:9000, name:'NEXUS Cerebro'},
+  {port:7777, name:'AURORA Suprema'},
+  {port:5600, name:'ACHE UNIVERSAL Madre'},
+  {port:5700, name:'ACHE FASE9'},
+  {port:5800, name:'ACHE FASE10 AUTO'},
+  {port:3000, name:'Frontend Dev Server'},
+  {port:3002, name:'ACHE MOBILE'},
+  {port:1883, name:'MQTT Broker'},
+];
+
+async function pingPort(port) {
+  const t0 = Date.now();
+  try {
+    const r = await fetch(`http://localhost:${port}/`,{signal:AbortSignal.timeout(1200)});
+    return {ok:r.ok||r.status<500, ms:Date.now()-t0};
+  } catch {
+    return {ok:false, ms:-1};
+  }
+}
+
+async function scanNetwork() {
+  const grid = document.getElementById('network-grid');
+  if(!grid) return;
+  grid.innerHTML = ACHE_SERVICES.map(s=>`
+    <div class="svc-row" id="svc-${s.port}">
+      <div class="svc-port">:${s.port}</div>
+      <div class="svc-name">${s.name}</div>
+      <div class="svc-ping"><div class="typing" style="justify-content:flex-end"><span></span><span></span></div></div>
+      <span class="badge badge-warn">...</span>
+    </div>
+  `).join('');
+
+  let active = 0;
+  await Promise.all(ACHE_SERVICES.map(async s=>{
+    const {ok,ms} = await pingPort(s.port);
+    if(ok) active++;
+    const row = document.getElementById('svc-'+s.port);
+    if(row) {
+      row.querySelector('.svc-ping').textContent = ok ? ms+'ms' : '—';
+      row.querySelector('.badge').className = `badge ${ok?'badge-ok':'badge-err'}`;
+      row.querySelector('.badge').textContent = ok?'ACTIVO':'offline';
+      row.style.borderLeftColor = ok ? 'var(--grn)' : 'rgba(255,82,82,.3)';
+      row.style.borderLeftWidth = '3px';
+    }
+  }));
+
+  const nsRed = document.getElementById('ns-red');
+  if(nsRed) nsRed.className = `nav-status ${active>0?'ns-ok':active===0?'ns-off':'ns-unk'}`;
+}
+
+function openService(port) { window.open(`http://localhost:${port}`,'_blank'); }
+
+// ── EDU LAB ──────────────────────────────────────────────────
+function eduShow(mode) {
+  const el = document.getElementById('edu-content');
+  const aiEl = document.getElementById('edu-ai-chat');
+  if(aiEl) aiEl.style.display='none';
+
+  const templates = {
+    iss: `<div style="text-align:center;padding:10px">
+      <div style="font-size:50px">🛰</div>
+      <div style="font-size:24px;font-weight:700;color:var(--cyan);margin:10px 0">¿Dónde está la Estación Espacial?</div>
+      <div style="font-size:15px;color:var(--txt2);line-height:1.7;max-width:500px;margin:0 auto">
+        La ISS vuela a <strong style="color:var(--amber)">400 km</strong> de altura, más rápido que un bala.
+        Da la vuelta a la Tierra en solo <strong style="color:var(--grn)">92 minutos</strong>.
+        ¡En este momento está sobre estas coordenadas!
+      </div>
+      <div style="display:flex;gap:20px;justify-content:center;margin:16px 0">
+        <div><div style="font-size:28px;color:var(--cyan);font-family:Orbitron,monospace" id="edu-lat">--°</div><div style="font-size:12px;color:var(--mut)">Latitud</div></div>
+        <div><div style="font-size:28px;color:var(--cyan);font-family:Orbitron,monospace" id="edu-lon">--°</div><div style="font-size:12px;color:var(--mut)">Longitud</div></div>
+        <div><div style="font-size:28px;color:var(--grn);font-family:Orbitron,monospace" id="edu-alt">--</div><div style="font-size:12px;color:var(--mut)">km de altura</div></div>
+      </div>
+    </div>`,
+    clima: `<div style="text-align:center;padding:10px">
+      <div style="font-size:50px">🌤</div>
+      <div style="font-size:24px;font-weight:700;color:var(--cyan);margin:10px 0">El Clima en La Cruz Ahora</div>
+      <div style="font-size:60px;font-family:Orbitron,monospace;color:var(--amber)" id="edu-temp">--°C</div>
+      <div style="font-size:18px;color:var(--txt2)" id="edu-wx">Cargando...</div>
+      <div style="font-size:14px;color:var(--mut);margin-top:12px">📍 La Cruz, Guanacaste, Costa Rica</div>
+      <div style="font-size:13px;color:var(--txt2);margin-top:12px;line-height:1.7;max-width:400px;margin-left:auto;margin-right:auto">
+        Esta información viene de satélites y estaciones meteorológicas reales del mundo.
+        ¡Así es como los científicos saben el clima de cualquier lugar!
+      </div>
+    </div>`,
+    espacio: `<div style="text-align:center;padding:10px">
+      <div style="font-size:50px">🌌</div>
+      <div style="font-size:24px;font-weight:700;color:var(--cyan);margin:10px 0">El Universo en Números</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <div style="background:var(--surf);border-radius:12px;padding:14px"><div style="font-size:22px;color:var(--amber);font-family:Orbitron,monospace">8.3 min</div><div style="font-size:12px;color:var(--mut)">Luz del Sol hasta la Tierra</div></div>
+        <div style="background:var(--surf);border-radius:12px;padding:14px"><div style="font-size:22px;color:var(--cyan);font-family:Orbitron,monospace">4.2 años</div><div style="font-size:12px;color:var(--mut)">Estrella más cercana (α Centauri)</div></div>
+        <div style="background:var(--surf);border-radius:12px;padding:14px"><div style="font-size:22px;color:var(--grn);font-family:Orbitron,monospace">100,000</div><div style="font-size:12px;color:var(--mut)">Años luz: tamaño Vía Láctea</div></div>
+        <div style="background:var(--surf);border-radius:12px;padding:14px"><div style="font-size:22px;color:var(--pur);font-family:Orbitron,monospace">2 billones</div><div style="font-size:12px;color:var(--mut)">Galaxias en el Universo</div></div>
+        <div style="background:var(--surf);border-radius:12px;padding:14px"><div style="font-size:22px;color:var(--red);font-family:Orbitron,monospace">8 planetas</div><div style="font-size:12px;color:var(--mut)">En nuestro sistema solar</div></div>
+        <div style="background:var(--surf);border-radius:12px;padding:14px"><div style="font-size:22px;color:var(--amber);font-family:Orbitron,monospace">13,800 M</div><div style="font-size:12px;color:var(--mut)">Años de edad del Universo</div></div>
+      </div>
+    </div>`,
+    datos: `<div style="text-align:center;padding:10px">
+      <div style="font-size:50px">📊</div>
+      <div style="font-size:24px;font-weight:700;color:var(--cyan);margin:10px 0">Datos Curiosos del Mundo</div>
+      <div style="display:flex;flex-direction:column;gap:10px;text-align:left;margin-top:12px">
+        <div style="background:var(--surf);border-radius:10px;padding:12px;display:flex;gap:12px;align-items:center">
+          <div style="font-size:30px">🌍</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--txt)">8,000,000,000 personas</div><div style="font-size:12px;color:var(--mut)">viven en la Tierra en este momento</div></div>
+        </div>
+        <div style="background:var(--surf);border-radius:10px;padding:12px;display:flex;gap:12px;align-items:center">
+          <div style="font-size:30px">🌿</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--txt)">Costa Rica: 29% de su territorio</div><div style="font-size:12px;color:var(--mut)">son áreas protegidas - ¡récord mundial!</div></div>
+        </div>
+        <div style="background:var(--surf);border-radius:10px;padding:12px;display:flex;gap:12px;align-items:center">
+          <div style="font-size:30px">💻</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--txt)">5.3 mil millones de personas</div><div style="font-size:12px;color:var(--mut)">tienen acceso a internet (67% del mundo)</div></div>
+        </div>
+        <div style="background:var(--surf);border-radius:10px;padding:12px;display:flex;gap:12px;align-items:center">
+          <div style="font-size:30px">🎓</div>
+          <div><div style="font-size:14px;font-weight:600;color:var(--txt)">La Cruz, Guanacaste tiene 15,000+ hab.</div><div style="font-size:12px;color:var(--mut)">y ACHE quiere conectar a todos los niños</div></div>
+        </div>
+      </div>
+    </div>`,
+    wikipedia: `<div style="padding:10px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:40px">📚</div>
+        <div style="font-size:20px;font-weight:700;color:var(--cyan)">Busca cualquier cosa</div>
+        <div style="font-size:14px;color:var(--txt2)">Wikipedia tiene millones de artículos en español</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input class="search-input" id="edu-wiki-in" placeholder="¿Qué quieres aprender hoy?" style="font-size:15px">
+        <button class="btn btn-primary" onclick="eduWiki()">BUSCAR</button>
+      </div>
+      <div id="edu-wiki-result" style="font-size:14px;color:var(--txt2);line-height:1.8"></div>
+    </div>`,
+    preguntas: '<div>preguntas</div>',
+  };
+
+  if(mode==='preguntas') {
+    if(el) el.innerHTML='';
+    if(aiEl) aiEl.style.display='block';
+    return;
+  }
+
+  if(el) el.innerHTML = templates[mode]||'';
+
+  // Load live data into edu sections
+  if(mode==='iss') {
+    fetch('https://api.wheretheiss.at/v1/satellites/25544').then(r=>r.json()).then(d=>{
+      const f=v=>parseFloat(v).toFixed(1);
+      document.getElementById('edu-lat').textContent = f(d.latitude)+'°';
+      document.getElementById('edu-lon').textContent = f(d.longitude)+'°';
+      document.getElementById('edu-alt').textContent = Math.round(d.altitude);
+    }).catch(()=>{});
+  }
+  if(mode==='clima') {
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=11.03&longitude=-85.63&current=temperature_2m,weather_code&forecast_days=1').then(r=>r.json()).then(d=>{
+      document.getElementById('edu-temp').textContent = Math.round(d.current.temperature_2m)+'°C';
+      document.getElementById('edu-wx').textContent = WX_CODES[d.current.weather_code]||'Condiciones variables';
+    }).catch(()=>{});
+  }
+}
+
+async function eduWiki() {
+  const q = document.getElementById('edu-wiki-in').value.trim();
+  if(!q) return;
+  const el = document.getElementById('edu-wiki-result');
+  el.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  try {
+    const r = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+    const d = await r.json();
+    el.innerHTML = `<strong style="color:var(--txt);font-size:16px">${d.title}</strong><br><br>${d.extract||'No encontrado.'}`;
+  } catch {
+    el.innerHTML = '<span style="color:var(--mut)">No se encontró. Intenta otra palabra.</span>';
+  }
+}
+
+async function eduAsk() {
+  const input = document.getElementById('edu-question');
+  const q = input.value.trim();
+  if(!q) return;
+  input.value='';
+  const hist = document.getElementById('edu-chat-history');
+  hist.innerHTML += `<div style="color:var(--cyan);font-weight:600;margin:6px 0">Tú: ${q}</div>`;
+  hist.innerHTML += '<div class="typing"><span></span><span></span><span></span></div>';
+  const r = await callAI(q, 'Eres ACHE, el asistente educativo para niños de La Cruz, Guanacaste, Costa Rica. Responde de forma simple, amigable y emocionante. Usa ejemplos con cosas de Costa Rica cuando puedas. Máximo 4 oraciones.', null);
+  const typings = hist.querySelectorAll('.typing');
+  typings.forEach(t=>t.remove());
+  if(r) {
+    hist.innerHTML += `<div style="color:var(--txt2);margin:6px 0 12px;padding:10px;background:var(--surf);border-radius:8px">🤖 ACHE: ${r.text}</div>`;
+  } else {
+    hist.innerHTML += `<div style="color:var(--mut)">ACHE necesita conexión a Groq API para responder. Configura la key en ⚙ Config.</div>`;
+  }
+}
+
+// ── PROJECT GENERATOR ─────────────────────────────────────────
+async function generateProjectIdea() {
+  const q = document.getElementById('project-query').value.trim();
+  if(!q) return;
+  const el = document.getElementById('project-idea-result');
+  el.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+  const sys = 'Eres un experto en startups tecnológicas rurales y economía cooperativa en Costa Rica. Dado un problema local, genera una idea de negocio tecnológica que COOPECRUCENOS puede desarrollar con su ecosistema ACHE (IA, APIs, React, Node.js). Incluye: nombre del producto, descripción, mercado objetivo, modelo de ingresos, impacto social. Sé conciso y práctico.';
+  const r = await callAI(`Problema o necesidad local: "${q}". Genera una idea de proyecto tecnológico para COOPECRUCENOS R.L.`, sys);
+  const typings = el.querySelectorAll('.typing');
+  typings.forEach(t=>t.remove());
+  if(r) {
+    el.innerHTML = r.text.replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<strong style="color:var(--amber)">$1</strong>');
+  } else {
+    el.innerHTML = '<span style="color:var(--mut)">Conecta la IA para generar ideas de proyectos.</span>';
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+chatHistory = STORE.getJSON('chat_history',[]);
+loadAPIs();
+console.log('[ACHE TOTAL] Sistema iniciado · COOPECRUCENOS R.L.');
+</script>
+</body>
+</html>
